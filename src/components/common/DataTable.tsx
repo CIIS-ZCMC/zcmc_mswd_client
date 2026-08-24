@@ -60,10 +60,10 @@ export function DataTable<T>({
   if (rows.length === 0) return <EmptyState message={emptyMessage} />
 
   return (
-    <div className="relative w-full overflow-auto rounded-md border border-border bg-card">
+    <div className="relative w-full overflow-auto rounded-xl border border-border/80 bg-card shadow-xs">
       <table className="w-full caption-bottom text-sm">
-        <thead className="border-b border-border bg-muted/40">
-          <tr className="border-b border-border transition-colors hover:bg-muted/50 text-left">
+        <thead className="border-b border-border/80 bg-muted/30">
+          <tr className="border-b border-border/80 transition-colors hover:bg-muted/40 text-left">
             {columns.map((column) => {
               const active = sort?.sortBy === column.key
               return (
@@ -71,7 +71,7 @@ export function DataTable<T>({
                   key={column.key}
                   scope="col"
                   className={cn(
-                    'h-10 px-4 text-left align-middle text-xs font-semibold text-muted-foreground uppercase tracking-wider',
+                    'h-11 px-4 text-left align-middle text-xs font-bold text-muted-foreground uppercase tracking-wider font-heading',
                     column.className,
                   )}
                 >
@@ -79,7 +79,7 @@ export function DataTable<T>({
                     <button
                       type="button"
                       onClick={() => toggleSort(column.key)}
-                      className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors group"
+                      className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors group font-semibold"
                       aria-sort={active ? (sort.sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
                     >
                       <span>{column.header}</span>
@@ -101,18 +101,18 @@ export function DataTable<T>({
             })}
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody className="divide-y divide-border/60">
           {rows.map((row) => (
             <tr
               key={getRowId(row)}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
               className={cn(
-                'transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted',
+                'transition-colors duration-150 hover:bg-accent/40 data-[state=selected]:bg-muted',
                 onRowClick && 'cursor-pointer',
               )}
             >
               {columns.map((column) => (
-                <td key={column.key} className={cn('p-4 align-middle text-foreground', column.className)}>
+                <td key={column.key} className={cn('p-4 align-middle text-foreground font-normal', column.className)}>
                   {column.render(row)}
                 </td>
               ))}

@@ -86,7 +86,8 @@ export function AddRecordMenu({ patient }: { patient: Patient }) {
     <>
       <MenuButton
         label="Add record"
-        icon={<Plus className="size-4" aria-hidden />}
+        size="sm"
+        icon={<Plus className="size-3.5" aria-hidden />}
         items={[
           {
             key: 'case',
