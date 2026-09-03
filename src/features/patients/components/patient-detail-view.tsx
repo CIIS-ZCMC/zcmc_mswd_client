@@ -17,8 +17,9 @@ import {
   UserCheck,
   Users,
 } from "lucide-react"
-import { usePatientMutations } from "../hooks/use-patient-mutations"
-import type { FamilyMember, PatientRecord, Watcher } from "../types"
+import { useAddFamilyMember, useAddWatcher } from "../hooks/use-patient-writes"
+import { useIntakeSheetsForPatient } from "../hooks/use-intake-sheets"
+import type { FamilyMember, PatientRecord } from "../types"
 import { FamilyMemberDialog } from "./dialogs/family-member-dialog"
 import { WatcherDialog } from "./dialogs/watcher-dialog"
 import { DocumentsTab } from "./tabs/documents-tab"
@@ -36,30 +37,28 @@ interface PatientDetailViewProps {
   onUpdatePatient?: (updatedPatient: PatientRecord) => void
 }
 
-export const PatientDetailView: React.FC<PatientDetailViewProps> = ({
-  patient,
-  onUpdatePatient = () => {},
-}) => {
+export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient }) => {
   const [activeTab, setActiveTab] = useState("profile")
   const [isAddFamilyOpen, setIsAddFamilyOpen] = useState(false)
   const [isAddWatcherOpen, setIsAddWatcherOpen] = useState(false)
 
-  const { mutateWithAudit } = usePatientMutations(patient, onUpdatePatient)
+  const addFamilyMember = useAddFamilyMember(patient.id)
+  const addWatcher = useAddWatcher(patient.id)
+  const { data: intakeSheets = [] } = useIntakeSheetsForPatient(patient.id)
 
+  // Both hit the real API and invalidate the patient's profile query on
+  // success (see use-patient-writes.ts) — no more client-synthesized ids or
+  // audit entries; the server's own Auditable trail is what the History tab
+  // reads now.
   const handleAddFamilyMember = (newFamily: Omit<FamilyMember, "id">) => {
-    const member: FamilyMember = {
-      id: `fam-${Date.now()}`,
-      ...newFamily,
-    }
-
-    mutateWithAudit(
-      "Family Member Added",
-      `Added family member: ${member.fullName} (${member.relationship})`,
-      (prev) => ({
-        ...prev,
-        familyMembers: [...prev.familyMembers, member],
-      })
-    )
+    addFamilyMember.mutate({
+      name: newFamily.fullName,
+      relationship: newFamily.relationship,
+      age: newFamily.age,
+      occupation: newFamily.occupation,
+      monthly_income: newFamily.monthlyIncome,
+      is_living_with_patient: newFamily.isDependent,
+    })
   }
 
   const handleAddWatcher = (watcherData: {
@@ -67,26 +66,11 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({
     relationship: string
     contactNo: string
   }) => {
-    const watcher: Watcher = {
-      id: `watch-${Date.now()}`,
-      fullName: watcherData.fullName,
+    addWatcher.mutate({
+      name: watcherData.fullName,
       relationship: watcherData.relationship,
-      contactNo: watcherData.contactNo || patient.contactNo,
-      passNo: `WP-2026-${Math.floor(100 + Math.random() * 900)}`,
-      validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
-      status: "Active",
-    }
-
-    mutateWithAudit(
-      "Watcher Pass Issued",
-      `Issued Pass ${watcher.passNo} for watcher: ${watcher.fullName}`,
-      (prev) => ({
-        ...prev,
-        watchers: [...prev.watchers, watcher],
-      })
-    )
+      contact_number: watcherData.contactNo || patient.contactNo,
+    })
   }
 
   return (
@@ -174,7 +158,7 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({
               <ClipboardList className="size-4" />
               <span>Intake Sheet</span>
               <span className="ml-1 rounded-full bg-background/30 px-2 py-0.5 text-[10px] font-bold">
-                {(patient.intakeSheets || []).length}
+                {intakeSheets.length}
               </span>
             </TabsTrigger>
 
@@ -252,7 +236,7 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({
           </TabsContent>
 
           <TabsContent value="intake-sheet">
-            <IntakeSheetTab patient={patient} onUpdatePatient={onUpdatePatient} />
+            <IntakeSheetTab patient={patient} />
           </TabsContent>
 
           <TabsContent value="id">

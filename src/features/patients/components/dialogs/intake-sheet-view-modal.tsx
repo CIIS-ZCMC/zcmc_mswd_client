@@ -8,251 +8,212 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Spinner } from "@/components/ui/spinner"
 import {
   Calendar,
-  CheckCircle2,
   ClipboardList,
+  Download,
+  FileText,
   Heart,
-  MapPin,
-  Phone,
+  History,
   Printer,
   UserCheck,
-  Users,
 } from "lucide-react"
-import type { IntakeSheetRecord, PatientRecord } from "../../types"
+import { downloadIntakeSheetPdf } from "../../api/intake-sheets-api"
+import { useIntakeSheet, useIntakeSheetHistory } from "../../hooks/use-intake-sheets"
 
 interface IntakeSheetViewModalProps {
-  intakeSheet: IntakeSheetRecord | null
-  patient: PatientRecord
+  intakeSheetId: number | null
   isOpen: boolean
   onClose: () => void
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  draft: "Draft",
+  submitted: "Submitted",
+  finalized: "Finalized",
+  cancelled: "Cancelled",
+}
+
 export const IntakeSheetViewModal: React.FC<IntakeSheetViewModalProps> = ({
-  intakeSheet,
-  patient,
+  intakeSheetId,
   isOpen,
   onClose,
 }) => {
-  if (!intakeSheet) return null
+  const { data: sheet, isPending } = useIntakeSheet(intakeSheetId)
+  const { data: history = [] } = useIntakeSheetHistory(intakeSheetId)
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-6">
-        <DialogHeader className="flex flex-row items-center justify-between border-b border-border/60 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
-              <ClipboardList className="size-5" />
-            </div>
-            <div>
-              <DialogTitle className="text-lg font-bold font-heading">
-                Social Intake Assessment Sheet (Form MSWD-01)
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                Control No: <strong className="font-mono text-primary">{intakeSheet.controlNo}</strong>
-              </DialogDescription>
-            </div>
+      <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto p-6">
+        {isPending || !sheet ? (
+          <div className="flex items-center justify-center py-16">
+            <Spinner className="size-6" />
           </div>
-          <Button
-            variant="default"
-            size="sm"
-            className="gap-2 font-bold h-9 px-4 mr-6"
-            onClick={() => window.print()}
-          >
-            <Printer className="size-4" />
-            Print Form MSWD-01
-          </Button>
-        </DialogHeader>
-
-        <div className="space-y-6 pt-4 text-sm">
-          {/* Section 1: Intake Metadata */}
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
-              <Calendar className="size-4 text-primary" /> 1. Intake Metadata &amp; Staff Assignment
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 rounded-xl border border-border/60 bg-muted/20 p-4 text-xs">
-              <div>
-                <span className="text-muted-foreground font-medium">Intake Date &amp; Time:</span>
-                <p className="font-bold text-foreground mt-0.5">{intakeSheet.intakeDate} {intakeSheet.intakeTime}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground font-medium">Intake Type:</span>
-                <p className="font-bold text-primary mt-0.5">{intakeSheet.intakeType}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground font-medium">Ward &amp; Bed:</span>
-                <p className="font-bold text-foreground mt-0.5">{intakeSheet.ward} ({intakeSheet.bedNo})</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground font-medium">Assigned RSW:</span>
-                <p className="font-bold text-foreground mt-0.5">{intakeSheet.socialWorker}</p>
-                <p className="text-[11px] font-mono text-muted-foreground">{intakeSheet.socialWorkerId}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Section 2: Patient & Informant Identification */}
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
-              <UserCheck className="size-4 text-primary" /> 2. Patient &amp; Respondent Identification
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="rounded-xl border border-border/60 p-4 space-y-2.5 bg-card">
-                <span className="font-bold text-foreground text-xs uppercase tracking-wide block border-b border-border/40 pb-1.5">
-                  Patient Profile
-                </span>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span className="text-muted-foreground font-medium">Full Name:</span>
-                    <p className="font-bold text-sm text-foreground mt-0.5">{patient.fullName}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground font-medium">Age / Gender:</span>
-                    <p className="font-semibold text-foreground mt-0.5">{patient.age} yrs / {patient.gender}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground font-medium">Hospital No:</span>
-                    <p className="font-mono font-semibold text-foreground mt-0.5">{patient.hospitalNo}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground font-medium">MSWD No:</span>
-                    <p className="font-mono font-semibold text-primary mt-0.5">{patient.mswdNo}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-muted-foreground font-medium">Address:</span>
-                    <p className="font-medium text-foreground mt-0.5 flex items-center gap-1">
-                      <MapPin className="size-3.5 text-primary" /> {patient.address}, {patient.city}
-                    </p>
-                  </div>
+        ) : (
+          <>
+            <DialogHeader className="flex flex-row items-center justify-between border-b border-border/60 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex size-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                  <ClipboardList className="size-5" />
                 </div>
-              </div>
-
-              <div className="rounded-xl border border-border/60 p-4 space-y-2.5 bg-card">
-                <span className="font-bold text-foreground text-xs uppercase tracking-wide block border-b border-border/40 pb-1.5">
-                  Informant / Respondent
-                </span>
-                <div className="space-y-2 text-xs">
-                  <div>
-                    <span className="text-muted-foreground font-medium">Informant Name:</span>
-                    <p className="font-bold text-sm text-foreground mt-0.5">{intakeSheet.informantName}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground font-medium">Relationship:</span>
-                    <p className="font-semibold text-foreground mt-0.5">{intakeSheet.informantRelationship}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground font-medium">Contact Number:</span>
-                    <p className="font-semibold text-foreground mt-0.5 font-mono flex items-center gap-1">
-                      <Phone className="size-3.5 text-primary" /> {intakeSheet.informantContact}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Section 3: Socio-Economic Data */}
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
-              <Users className="size-4 text-primary" /> 3. Household Socio-Economic Profile
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3 text-xs">
-              <div className="rounded-xl border border-border/60 p-3 bg-muted/20">
-                <span className="text-muted-foreground font-medium">Household Size:</span>
-                <p className="text-base font-extrabold text-foreground font-mono mt-0.5">
-                  {intakeSheet.householdSize} Members
-                </p>
-              </div>
-              <div className="rounded-xl border border-border/60 p-3 bg-muted/20">
-                <span className="text-muted-foreground font-medium">Monthly Income:</span>
-                <p className="text-base font-extrabold text-foreground font-mono mt-0.5">
-                  ₱{intakeSheet.monthlyIncome.toLocaleString()}
-                </p>
-              </div>
-              <div className="rounded-xl border border-border/60 p-3 bg-muted/20">
-                <span className="text-muted-foreground font-medium">Per Capita Income:</span>
-                <p className="text-base font-extrabold text-primary font-mono mt-0.5">
-                  ₱{intakeSheet.perCapitaIncome.toLocaleString()} / mo
-                </p>
-              </div>
-              <div className="rounded-xl border border-border/60 p-3 bg-muted/20">
-                <span className="text-muted-foreground font-medium">Housing Status:</span>
-                <p className="text-sm font-bold text-foreground mt-0.5">
-                  {intakeSheet.housingStatus}
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-border/60 overflow-hidden">
-              <Table className="text-xs">
-                <TableHeader className="bg-muted/40">
-                  <TableRow>
-                    <TableHead className="font-bold">Family Member</TableHead>
-                    <TableHead className="font-bold">Relationship</TableHead>
-                    <TableHead className="font-bold">Age</TableHead>
-                    <TableHead className="font-bold">Occupation</TableHead>
-                    <TableHead className="font-bold">Monthly Income</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {patient.familyMembers.map((m) => (
-                    <TableRow key={m.id}>
-                      <TableCell className="font-semibold text-foreground">{m.fullName}</TableCell>
-                      <TableCell>{m.relationship}</TableCell>
-                      <TableCell>{m.age} yrs</TableCell>
-                      <TableCell>{m.occupation || "None"}</TableCell>
-                      <TableCell className="font-mono font-semibold">₱{m.monthlyIncome.toLocaleString()}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-
-          {/* Section 4: Clinical Need & Assistance Grant */}
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
-              <Heart className="size-4 text-primary" /> 4. Clinical Diagnosis &amp; Recommended Grant
-            </h3>
-            <div className="rounded-xl border border-border/60 p-4 space-y-3 bg-card">
-              <div>
-                <span className="text-xs font-bold text-muted-foreground">Admitting Clinical Diagnosis:</span>
-                <p className="text-xs font-semibold text-foreground mt-0.5">{intakeSheet.diagnosis}</p>
-              </div>
-              <div className="border-t border-border/40 pt-2">
-                <span className="text-xs font-bold text-muted-foreground">Social Worker Notes &amp; Assessment:</span>
-                <p className="text-xs text-foreground mt-1 rounded-lg bg-muted/30 p-3 leading-relaxed">
-                  {intakeSheet.socialWorkerNotes}
-                </p>
-              </div>
-              <div className="flex items-center justify-between rounded-xl bg-primary/10 border border-primary/20 p-3 mt-2">
                 <div>
-                  <Badge variant="default" className="text-xs font-bold px-2.5 py-0.5 mb-1">
-                    {intakeSheet.category}
-                  </Badge>
-                  <p className="text-xs font-bold text-foreground">{intakeSheet.recommendedAssistance}</p>
+                  <DialogTitle className="text-xl font-bold font-heading">Unified Intake Sheet</DialogTitle>
+                  <DialogDescription className="text-sm">
+                    Intake No: <strong className="font-mono text-primary">{sheet.intake_no}</strong>
+                  </DialogDescription>
                 </div>
-                <span className="font-mono text-lg font-extrabold text-primary">
-                  ₱{intakeSheet.approvedAmount.toLocaleString()}
-                </span>
               </div>
-            </div>
-          </div>
+              <div className="flex items-center gap-2 mr-6">
+                {sheet.status === "finalized" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 font-bold h-9 px-4"
+                    onClick={() => downloadIntakeSheetPdf(sheet.id, `${sheet.intake_no}.pdf`)}
+                  >
+                    <Download className="size-4" />
+                    Download PDF
+                  </Button>
+                )}
+                <Button variant="default" size="sm" className="gap-2 font-bold h-9 px-4" onClick={() => window.print()}>
+                  <Printer className="size-4" />
+                  Print
+                </Button>
+              </div>
+            </DialogHeader>
 
-          {/* Section 5: Signature Block */}
-          <div className="border-t border-border/60 pt-4">
-            <div className="flex items-center justify-between bg-muted/20 rounded-xl p-4 border border-border/60">
-              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
-                <CheckCircle2 className="size-4" /> Status: {intakeSheet.status} &amp; Signed
+            <div className="space-y-6 pt-4 text-sm">
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
+                  <Calendar className="size-4 text-primary" /> Intake Details
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 rounded-xl border border-border/60 bg-muted/20 p-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground font-medium">Status:</span>
+                    <p className="mt-0.5">
+                      <Badge variant="outline" className="text-xs font-bold px-2.5 py-0.5">
+                        {STATUS_LABEL[sheet.status] ?? sheet.status}
+                      </Badge>
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground font-medium">Date of Intake:</span>
+                    <p className="font-bold text-foreground mt-0.5">
+                      {sheet.date_of_intake ? sheet.date_of_intake.slice(0, 10) : "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground font-medium">Referral Source:</span>
+                    <p className="font-bold text-foreground mt-0.5">{sheet.referral_source || "—"}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground font-medium">Case:</span>
+                    <p className="font-bold text-foreground mt-0.5 font-mono">{sheet.case?.case_code ?? "—"}</p>
+                  </div>
+                </div>
+                {sheet.referral_details && (
+                  <p className="text-sm text-muted-foreground mt-2">{sheet.referral_details}</p>
+                )}
+                {sheet.remarks && (
+                  <p className="text-sm text-foreground mt-2 rounded-lg bg-muted/30 p-3">{sheet.remarks}</p>
+                )}
               </div>
-              <div className="text-right text-xs">
-                <p className="font-bold text-foreground">{intakeSheet.socialWorker}</p>
-                <p className="text-muted-foreground font-mono text-[11px]">License: {intakeSheet.socialWorkerId}</p>
+
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
+                  <UserCheck className="size-4 text-primary" /> Patient
+                </h3>
+                <div className="rounded-xl border border-border/60 p-4 text-sm bg-card">
+                  <p className="font-bold text-base text-foreground">
+                    {sheet.patient
+                      ? [sheet.patient.first_name, sheet.patient.middle_name, sheet.patient.last_name]
+                          .filter(Boolean)
+                          .join(" ")
+                      : "—"}
+                  </p>
+                  <p className="text-muted-foreground mt-0.5">
+                    Hospital ID: {sheet.patient?.hospital_id ?? "—"} • MSWD ID: {sheet.patient?.mswd_id ?? "—"}
+                  </p>
+                </div>
               </div>
+
+              {sheet.assessment && (
+                <div>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
+                    <Heart className="size-4 text-primary" /> Assessment
+                  </h3>
+                  <div className="rounded-xl border border-border/60 p-4 space-y-2 bg-card text-sm">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="default" className="text-xs font-bold px-2.5 py-0.5">
+                        {sheet.assessment.classification.replace(/_/g, " ")}
+                      </Badge>
+                      {sheet.assessment.total_family_income != null && (
+                        <span className="font-mono font-extrabold text-primary">
+                          ₱{Number(sheet.assessment.total_family_income).toLocaleString()}/mo
+                        </span>
+                      )}
+                    </div>
+                    {sheet.assessment.presenting_problem && (
+                      <p>
+                        <span className="font-semibold text-muted-foreground">Presenting Problem: </span>
+                        {sheet.assessment.presenting_problem}
+                      </p>
+                    )}
+                    {sheet.assessment.family_background && (
+                      <p>
+                        <span className="font-semibold text-muted-foreground">Family Background: </span>
+                        {sheet.assessment.family_background}
+                      </p>
+                    )}
+                    {sheet.assessment.intervention_plan && (
+                      <p>
+                        <span className="font-semibold text-muted-foreground">Intervention Plan: </span>
+                        {sheet.assessment.intervention_plan}
+                      </p>
+                    )}
+                    {sheet.assessment.expenses && sheet.assessment.expenses.length > 0 && (
+                      <div className="border-t border-border/40 pt-2 mt-2">
+                        <span className="font-semibold text-muted-foreground block mb-1">Household Expenses:</span>
+                        <div className="space-y-1">
+                          {sheet.assessment.expenses.map((expense) => (
+                            <div key={expense.id} className="flex items-center justify-between">
+                              <span className="capitalize">{expense.expense_type}</span>
+                              <span className="font-mono font-semibold">
+                                ₱{Number(expense.amount).toLocaleString()}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {history.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
+                    <History className="size-4 text-primary" /> History
+                  </h3>
+                  <div className="rounded-xl border border-border/60 divide-y divide-border/50">
+                    {history.slice(0, 10).map((entry) => (
+                      <div key={entry.id} className="p-3 text-sm flex items-start gap-2">
+                        <FileText className="size-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-foreground">{entry.description}</p>
+                          <p className="text-muted-foreground text-xs mt-0.5">
+                            {entry.causer?.name ?? "System"} • {new Date(entry.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   )
