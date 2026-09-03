@@ -5,6 +5,7 @@ import { Briefcase, Edit, Heart, MapPin, Phone, User } from "lucide-react"
 import { useUpdatePatientBackground } from "../../hooks/use-patient-writes"
 import type { PatientRecord } from "../../types"
 import { PatientBackgroundDialog } from "../dialogs/patient-background-dialog"
+import { PatientContactDialog } from "../dialogs/patient-contact-dialog"
 
 interface ProfileTabProps {
   patient: PatientRecord
@@ -12,148 +13,183 @@ interface ProfileTabProps {
 
 export const ProfileTab: React.FC<ProfileTabProps> = ({ patient }) => {
   const [isEditingBackground, setIsEditingBackground] = useState(false)
+  const [isEditingContact, setIsEditingContact] = useState(false)
   const updateBackground = useUpdatePatientBackground(patient.id)
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2 font-bold">
-            <User className="size-5 text-primary" /> Personal Demographics
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* 1. Personal Demographics */}
+      <Card className="flex flex-col shadow-xs">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3.5 border-b border-border/40">
+          <CardTitle className="text-lg md:text-xl flex items-center gap-2.5 font-bold">
+            <User className="size-6 text-primary" /> Personal Demographics
           </CardTitle>
+          <Button
+            variant="outline"
+            size="default"
+            className="h-9 px-3.5 text-sm gap-2 font-bold"
+            onClick={() => setIsEditingBackground(true)}
+          >
+            <Edit className="size-4" /> Edit Profile
+          </Button>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
+        <CardContent className="space-y-4 text-base flex-1 pt-4">
           <div>
-            <span className="text-muted-foreground font-medium text-xs">Full Name:</span>
-            <p className="font-bold text-base text-foreground mt-0.5">{patient.fullName}</p>
+            <span className="text-muted-foreground font-semibold text-sm">Full Name:</span>
+            <p className="font-bold text-lg md:text-xl text-foreground mt-0.5">{patient.fullName}</p>
           </div>
-          <div className="grid grid-cols-2 gap-2 border-t border-border/50 pt-2">
+
+          <div className="grid grid-cols-2 gap-4 border-t border-border/50 pt-3">
             <div>
-              <span className="text-muted-foreground font-medium text-xs">Age / Gender:</span>
-              <p className="font-semibold text-sm">
+              <span className="text-muted-foreground font-semibold text-sm">Age / Gender:</span>
+              <p className="font-bold text-base mt-0.5">
                 {patient.age} yrs / {patient.gender}
               </p>
             </div>
             <div>
-              <span className="text-muted-foreground font-medium text-xs">Birth Date:</span>
-              <p className="font-semibold text-sm">{patient.birthDate}</p>
+              <span className="text-muted-foreground font-semibold text-sm">Birth Date:</span>
+              <p className="font-bold text-base mt-0.5">{patient.birthDate || "Not on file"}</p>
             </div>
           </div>
-          <div className="border-t border-border/50 pt-2">
-            <span className="text-muted-foreground font-medium text-xs">Civil Status:</span>
-            <p className="font-semibold text-sm">{patient.civilStatus}</p>
+
+          <div className="grid grid-cols-2 gap-4 border-t border-border/50 pt-3">
+            <div>
+              <span className="text-muted-foreground font-semibold text-sm">Place of Birth:</span>
+              <p className="font-semibold text-base mt-0.5">{patient.placeOfBirth || "Not on file"}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground font-semibold text-sm">Civil Status:</span>
+              <p className="font-semibold text-base mt-0.5">{patient.civilStatus || "Not on file"}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 border-t border-border/50 pt-3">
+            <div>
+              <span className="text-muted-foreground font-semibold text-sm">Religion:</span>
+              <p className="font-semibold text-base mt-0.5">{patient.religion || "Not on file"}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground font-semibold text-sm">Nationality:</span>
+              <p className="font-semibold text-base mt-0.5">{patient.nationality || "Not on file"}</p>
+            </div>
+          </div>
+
+          <div className="border-t border-border/50 pt-3">
+            <span className="text-muted-foreground font-semibold text-sm">Educational Attainment:</span>
+            <p className="font-semibold text-base mt-0.5">{patient.educationalAttainment || "Not on file"}</p>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2 font-bold">
-            <MapPin className="size-5 text-primary" /> Address &amp; Contact
+      {/* 2. Contact & Residence */}
+      <Card className="flex flex-col shadow-xs">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3.5 border-b border-border/40">
+          <CardTitle className="text-lg md:text-xl flex items-center gap-2.5 font-bold">
+            <MapPin className="size-6 text-primary" /> Contact &amp; Residence Information
           </CardTitle>
+          <Button
+            variant="outline"
+            size="default"
+            className="h-9 px-3.5 text-sm gap-2 font-bold"
+            onClick={() => setIsEditingContact(true)}
+          >
+            <Edit className="size-4" /> Edit
+          </Button>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
+        <CardContent className="space-y-4 text-base flex-1 pt-4">
           <div>
-            <span className="text-muted-foreground font-medium text-xs">Contact Number:</span>
-            <p className="font-semibold text-sm flex items-center gap-1.5 text-foreground mt-0.5">
-              <Phone className="size-4 text-primary" /> {patient.contactNo}
+            <span className="text-muted-foreground font-semibold text-sm">Contact Number:</span>
+            <p className="font-bold text-base md:text-lg flex items-center gap-2 text-foreground mt-0.5 font-mono">
+              <Phone className="size-4.5 text-primary" /> {patient.contactNo || "Not on file"}
             </p>
           </div>
-          <div className="border-t border-border/50 pt-2">
-            <span className="text-muted-foreground font-medium text-xs">Barangay:</span>
-            <p className="font-semibold text-sm">
-              {patient.barangay}, {patient.city}
+
+          <div className="border-t border-border/50 pt-3">
+            <span className="text-muted-foreground font-semibold text-sm">Barangay &amp; City:</span>
+            <p className="font-bold text-base mt-0.5">
+              {patient.barangay ? `${patient.barangay}, ${patient.city}` : patient.city || "Not on file"}
             </p>
           </div>
-          <div className="border-t border-border/50 pt-2">
-            <span className="text-muted-foreground font-medium text-xs">Full Address:</span>
-            <p className="font-medium text-sm text-foreground">{patient.address}</p>
+
+          <div className="border-t border-border/50 pt-3">
+            <span className="text-muted-foreground font-semibold text-sm">Primary Address:</span>
+            <p className="font-semibold text-base text-foreground mt-0.5">{patient.address || "Not on file"}</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border/50 pt-3">
+            <div>
+              <span className="text-muted-foreground font-semibold text-sm">Present Address:</span>
+              <p className="font-semibold text-base mt-0.5">{patient.presentAddress || "Not on file"}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground font-semibold text-sm">Permanent Address:</span>
+              <p className="font-semibold text-base mt-0.5">{patient.permanentAddress || "Not on file"}</p>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2 font-bold">
-            <Heart className="size-5 text-primary" /> Admission &amp; Medical Diagnosis
+      {/* 3. Admission & Medical Diagnosis */}
+      <Card className="flex flex-col shadow-xs">
+        <CardHeader className="pb-3.5 border-b border-border/40">
+          <CardTitle className="text-lg md:text-xl flex items-center gap-2.5 font-bold">
+            <Heart className="size-6 text-primary" /> Admission &amp; Medical Diagnosis
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
+        <CardContent className="space-y-4 text-base flex-1 pt-4">
           <div>
-            <span className="text-muted-foreground font-medium text-xs">
-              Admission Status:
-            </span>
-            <p className="font-bold text-sm text-primary mt-0.5">
+            <span className="text-muted-foreground font-semibold text-sm">Admission Status:</span>
+            <p className="font-bold text-base md:text-lg text-primary mt-0.5">
               {patient.admissionStatus}
             </p>
           </div>
-          <div className="border-t border-border/50 pt-2">
-            <span className="text-muted-foreground font-medium text-xs">Ward &amp; Bed:</span>
-            <p className="font-semibold text-sm">
+
+          <div className="border-t border-border/50 pt-3">
+            <span className="text-muted-foreground font-semibold text-sm">Ward &amp; Bed:</span>
+            <p className="font-bold text-base md:text-lg mt-0.5">
               {patient.ward} - {patient.bedNo}
             </p>
           </div>
-          <div className="border-t border-border/50 pt-2">
-            <span className="text-muted-foreground font-medium text-xs">
-              Clinical Diagnosis:
-            </span>
-            <p className="font-semibold text-sm text-foreground leading-relaxed">
+
+          <div className="border-t border-border/50 pt-3">
+            <span className="text-muted-foreground font-semibold text-sm">Clinical Diagnosis:</span>
+            <p className="font-semibold text-base text-foreground leading-relaxed mt-0.5">
               {patient.diagnosis}
             </p>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="md:col-span-3">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2 font-bold">
-            <Briefcase className="size-5 text-primary" /> Background &amp; Economic Profile
+      {/* 4. Socio-Economic & Employment */}
+      <Card className="flex flex-col shadow-xs">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3.5 border-b border-border/40">
+          <CardTitle className="text-lg md:text-xl flex items-center gap-2.5 font-bold">
+            <Briefcase className="size-6 text-primary" /> Socio-Economic &amp; Employment
           </CardTitle>
           <Button
             variant="outline"
-            size="sm"
-            className="h-8 px-3 text-xs gap-1.5 font-semibold"
+            size="default"
+            className="h-9 px-3.5 text-sm gap-2 font-bold"
             onClick={() => setIsEditingBackground(true)}
           >
-            <Edit className="size-3.5" /> Edit
+            <Edit className="size-4" /> Edit
           </Button>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3 text-sm">
-          <div>
-            <span className="text-muted-foreground font-medium text-xs">Religion:</span>
-            <p className="font-semibold text-sm">{patient.religion || "Not on file"}</p>
+        <CardContent className="space-y-4 text-base flex-1 pt-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <span className="text-muted-foreground font-semibold text-sm">Occupation:</span>
+              <p className="font-semibold text-base mt-0.5">{patient.occupation || "Not on file"}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground font-semibold text-sm">Employer:</span>
+              <p className="font-semibold text-base mt-0.5">{patient.employer || "Not on file"}</p>
+            </div>
           </div>
-          <div>
-            <span className="text-muted-foreground font-medium text-xs">Nationality:</span>
-            <p className="font-semibold text-sm">{patient.nationality || "Not on file"}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground font-medium text-xs">Place of Birth:</span>
-            <p className="font-semibold text-sm">{patient.placeOfBirth || "Not on file"}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground font-medium text-xs">Educational Attainment:</span>
-            <p className="font-semibold text-sm">{patient.educationalAttainment || "Not on file"}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground font-medium text-xs">Permanent Address:</span>
-            <p className="font-semibold text-sm">{patient.permanentAddress || "Not on file"}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground font-medium text-xs">Present Address:</span>
-            <p className="font-semibold text-sm">{patient.presentAddress || "Not on file"}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground font-medium text-xs">Occupation:</span>
-            <p className="font-semibold text-sm">{patient.occupation || "Not on file"}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground font-medium text-xs">Employer:</span>
-            <p className="font-semibold text-sm">{patient.employer || "Not on file"}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground font-medium text-xs">Monthly Income:</span>
-            <p className="font-semibold text-sm font-mono">
+
+          <div className="border-t border-border/50 pt-3">
+            <span className="text-muted-foreground font-semibold text-sm">Patient Monthly Income:</span>
+            <p className="font-bold text-lg md:text-xl text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
               {patient.monthlyIncome != null ? `₱${patient.monthlyIncome.toLocaleString()}` : "Not on file"}
             </p>
           </div>
@@ -169,6 +205,18 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ patient }) => {
           updateBackground.mutate(payload, { onSuccess: () => setIsEditingBackground(false) })
         }
       />
+
+      <PatientContactDialog
+        isOpen={isEditingContact}
+        onClose={() => setIsEditingContact(false)}
+        patient={patient}
+        isSaving={updateBackground.isPending}
+        onSave={(payload) =>
+          updateBackground.mutate(payload, { onSuccess: () => setIsEditingContact(false) })
+        }
+      />
     </div>
   )
 }
+
+
