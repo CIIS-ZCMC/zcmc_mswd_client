@@ -58,14 +58,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setFilterDate(undefined)
   }
 
+  // Backend classification values (assessments.classification is a free
+  // string, no enum): indigent, low_income, self_sufficient, others.
+  // Replaces the old "Category C1-D" scheme, which never existed in the
+  // backend at all.
   const getCategoryBadgeVariant = (category: string) => {
     switch (category) {
-      case "Category D":
+      case "Indigent":
         return "destructive"
-      case "Category C3":
+      case "Low Income":
         return "default"
-      case "Category C2":
-        return "secondary"
       default:
         return "outline"
     }
@@ -121,7 +123,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Quick Category Chips */}
         <div className="flex flex-wrap gap-1.5 pt-1">
-          {["ALL", "Category C1", "Category C2", "Category C3", "Category D"].map(
+          {["ALL", "Indigent", "Low Income", "Self-Sufficient", "Others", "Unclassified"].map(
             (cat) => (
               <button
                 key={cat}
@@ -133,7 +135,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     : "bg-background text-muted-foreground border-border hover:bg-muted hover:text-foreground"
                 )}
               >
-                {cat === "ALL" ? "All" : cat.replace("Category ", "")}
+                {cat === "ALL" ? "All" : cat}
               </button>
             )
           )}

@@ -1,13 +1,19 @@
-import React from "react"
+import React, { useState } from "react"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Heart, MapPin, Phone, User } from "lucide-react"
+import { Briefcase, Edit, Heart, MapPin, Phone, User } from "lucide-react"
+import { useUpdatePatientBackground } from "../../hooks/use-patient-writes"
 import type { PatientRecord } from "../../types"
+import { PatientBackgroundDialog } from "../dialogs/patient-background-dialog"
 
 interface ProfileTabProps {
   patient: PatientRecord
 }
 
 export const ProfileTab: React.FC<ProfileTabProps> = ({ patient }) => {
+  const [isEditingBackground, setIsEditingBackground] = useState(false)
+  const updateBackground = useUpdatePatientBackground(patient.id)
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
       <Card>
@@ -97,6 +103,72 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ patient }) => {
           </div>
         </CardContent>
       </Card>
+
+      <Card className="md:col-span-3">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2 font-bold">
+            <Briefcase className="size-5 text-primary" /> Background &amp; Economic Profile
+          </CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 px-3 text-xs gap-1.5 font-semibold"
+            onClick={() => setIsEditingBackground(true)}
+          >
+            <Edit className="size-3.5" /> Edit
+          </Button>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3 text-sm">
+          <div>
+            <span className="text-muted-foreground font-medium text-xs">Religion:</span>
+            <p className="font-semibold text-sm">{patient.religion || "Not on file"}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground font-medium text-xs">Nationality:</span>
+            <p className="font-semibold text-sm">{patient.nationality || "Not on file"}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground font-medium text-xs">Place of Birth:</span>
+            <p className="font-semibold text-sm">{patient.placeOfBirth || "Not on file"}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground font-medium text-xs">Educational Attainment:</span>
+            <p className="font-semibold text-sm">{patient.educationalAttainment || "Not on file"}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground font-medium text-xs">Permanent Address:</span>
+            <p className="font-semibold text-sm">{patient.permanentAddress || "Not on file"}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground font-medium text-xs">Present Address:</span>
+            <p className="font-semibold text-sm">{patient.presentAddress || "Not on file"}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground font-medium text-xs">Occupation:</span>
+            <p className="font-semibold text-sm">{patient.occupation || "Not on file"}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground font-medium text-xs">Employer:</span>
+            <p className="font-semibold text-sm">{patient.employer || "Not on file"}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground font-medium text-xs">Monthly Income:</span>
+            <p className="font-semibold text-sm font-mono">
+              {patient.monthlyIncome != null ? `₱${patient.monthlyIncome.toLocaleString()}` : "Not on file"}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <PatientBackgroundDialog
+        isOpen={isEditingBackground}
+        onClose={() => setIsEditingBackground(false)}
+        patient={patient}
+        isSaving={updateBackground.isPending}
+        onSave={(payload) =>
+          updateBackground.mutate(payload, { onSuccess: () => setIsEditingBackground(false) })
+        }
+      />
     </div>
   )
 }

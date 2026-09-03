@@ -4,101 +4,93 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useAuth } from "@/features/auth/hooks/use-auth"
 import {
   CheckCircle2,
   ClipboardList,
+  Download,
   Edit,
-  Eye,
+  FileCheck2,
   FilterX,
   Plus,
   Search,
+  Send,
   UserCheck,
+  X,
 } from "lucide-react"
-import { usePatientMutations } from "../../hooks/use-patient-mutations"
-import type { IntakeSheetRecord, PatientRecord } from "../../types"
+import {
+  useCancelIntakeSheet,
+  useFinalizeIntakeSheet,
+  useIntakeSheetsForPatient,
+  useSubmitIntakeSheet,
+} from "../../hooks/use-intake-sheets"
+import { downloadIntakeSheetPdf } from "../../api/intake-sheets-api"
+import type { ApiUnifiedIntakeSheet } from "../../types/api.types"
+import type { IntakeSheetStatus } from "../../types/intake.types"
+import type { PatientRecord } from "../../types"
 import { IntakeSheetViewModal } from "../dialogs/intake-sheet-view-modal"
 import { IntakeSheetWizardModal } from "../dialogs/intake-sheet-wizard-modal"
 
 interface IntakeSheetTabProps {
   patient: PatientRecord
-  onUpdatePatient?: (updated: PatientRecord) => void
 }
 
-export const IntakeSheetTab: React.FC<IntakeSheetTabProps> = ({
-  patient,
-  onUpdatePatient = () => {},
-}) => {
+const STATUS_FILTERS: Array<"ALL" | IntakeSheetStatus> = ["ALL", "draft", "submitted", "finalized", "cancelled"]
+
+const STATUS_LABEL: Record<IntakeSheetStatus, string> = {
+  draft: "Draft",
+  submitted: "Submitted",
+  finalized: "Finalized",
+  cancelled: "Cancelled",
+}
+
+function statusBadgeVariant(status: IntakeSheetStatus): "outline" | "secondary" | "default" | "destructive" {
+  switch (status) {
+    case "finalized":
+      return "default"
+    case "submitted":
+      return "secondary"
+    case "cancelled":
+      return "destructive"
+    default:
+      return "outline"
+  }
+}
+
+export const IntakeSheetTab: React.FC<IntakeSheetTabProps> = ({ patient }) => {
+  const { user } = useAuth()
   const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("ALL")
-  const [selectedViewRecord, setSelectedViewRecord] = useState<IntakeSheetRecord | null>(null)
-  const [selectedEditRecord, setSelectedEditRecord] = useState<IntakeSheetRecord | null>(null)
+  const [statusFilter, setStatusFilter] = useState<"ALL" | IntakeSheetStatus>("ALL")
+  const [viewingId, setViewingId] = useState<number | null>(null)
+  const [editingSheet, setEditingSheet] = useState<ApiUnifiedIntakeSheet | null>(null)
   const [isWizardOpen, setIsWizardOpen] = useState(false)
 
-  const { mutateWithAudit } = usePatientMutations(patient, onUpdatePatient)
-
-  const intakeSheetsList = patient.intakeSheets || []
+  const { data: sheets = [], isLoading } = useIntakeSheetsForPatient(patient.id)
+  const submitMutation = useSubmitIntakeSheet(patient.id)
+  const finalizeMutation = useFinalizeIntakeSheet(patient.id)
+  const cancelMutation = useCancelIntakeSheet(patient.id)
 
   const filteredSheets = useMemo(() => {
-    return intakeSheetsList.filter((sheet) => {
+    return sheets.filter((sheet) => {
       const matchesSearch =
         searchQuery === "" ||
-        sheet.controlNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sheet.intakeType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sheet.socialWorker.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        sheet.ward.toLowerCase().includes(searchQuery.toLowerCase())
+        sheet.intake_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (sheet.referral_source ?? "").toLowerCase().includes(searchQuery.toLowerCase())
 
-      const matchesStatus =
-        statusFilter === "ALL" || sheet.status === statusFilter
+      const matchesStatus = statusFilter === "ALL" || sheet.status === statusFilter
 
       return matchesSearch && matchesStatus
     })
-  }, [intakeSheetsList, searchQuery, statusFilter])
+  }, [sheets, searchQuery, statusFilter])
 
-  const handleCreateOrUpdateIntakeSheet = (
-    data: Omit<IntakeSheetRecord, "id"> & { id?: string }
-  ) => {
-    if (data.id) {
-      // Edit existing record
-      mutateWithAudit(
-        "Intake Sheet Updated",
-        `Updated social intake record ${data.controlNo} (${data.intakeType})`,
-        (prev) => ({
-          ...prev,
-          intakeSheets: (prev.intakeSheets || []).map((s) =>
-            s.id === data.id ? ({ ...data, id: data.id } as IntakeSheetRecord) : s
-          ),
-        })
-      )
-    } else {
-      // Create new record
-      const newSheet: IntakeSheetRecord = {
-        id: `is-${Date.now()}`,
-        ...data,
-      } as IntakeSheetRecord
-
-      mutateWithAudit(
-        "Intake Sheet Created",
-        `Created new social intake record ${newSheet.controlNo} (${newSheet.intakeType})`,
-        (prev) => ({
-          ...prev,
-          category: newSheet.category || prev.category,
-          intakeSheets: [newSheet, ...(prev.intakeSheets || [])],
-        })
-      )
+  const workerLabel = (sheet: ApiUnifiedIntakeSheet): string => {
+    if (sheet.intake_worker_id === user?.id) {
+      return user?.employee_name ?? `Worker #${sheet.intake_worker_id}`
     }
-  }
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "Verified":
-        return "outline"
-      case "Pending Review":
-        return "secondary"
-      case "Archived":
-        return "destructive"
-      default:
-        return "outline"
-    }
+    // The intake-sheets list resource only exposes intake_worker_id, not a
+    // nested worker resource — no name is available for a sheet created by
+    // someone other than the currently logged-in user.
+    return sheet.intake_worker_id != null ? `Worker #${sheet.intake_worker_id}` : "—"
   }
 
   return (
@@ -115,11 +107,11 @@ export const IntakeSheetTab: React.FC<IntakeSheetTabProps> = ({
                 Social Intake Assessment Sheets
               </h2>
               <Badge variant="secondary" className="font-mono text-xs px-2.5 py-0.5 font-bold">
-                {intakeSheetsList.length} Record{intakeSheetsList.length !== 1 ? "s" : ""}
+                {sheets.length} Record{sheets.length !== 1 ? "s" : ""}
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Form MSWD-01 intake records &amp; assessment logs for {patient.fullName}.
+              Unified intake records for {patient.fullName}.
             </p>
           </div>
         </div>
@@ -129,7 +121,7 @@ export const IntakeSheetTab: React.FC<IntakeSheetTabProps> = ({
           size="default"
           className="gap-2 font-bold h-10 px-5"
           onClick={() => {
-            setSelectedEditRecord(null)
+            setEditingSheet(null)
             setIsWizardOpen(true)
           }}
         >
@@ -146,16 +138,15 @@ export const IntakeSheetTab: React.FC<IntakeSheetTabProps> = ({
               <UserCheck className="size-5 text-primary" /> Intake Records Registry
             </CardTitle>
             <CardDescription className="text-xs">
-              Chronological listing of verified &amp; archived MSWD intake evaluations.
+              Draft, submitted, finalized and cancelled intakes, newest first.
             </CardDescription>
           </div>
 
-          {/* Search & Filter Bar */}
           <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-64">
               <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
               <Input
-                placeholder="Search control #, worker, ward..."
+                placeholder="Search intake #, referral source..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 text-xs h-9"
@@ -163,7 +154,7 @@ export const IntakeSheetTab: React.FC<IntakeSheetTabProps> = ({
             </div>
 
             <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-xl border border-border">
-              {["ALL", "Verified", "Pending Review", "Archived"].map((st) => (
+              {STATUS_FILTERS.map((st) => (
                 <button
                   key={st}
                   onClick={() => setStatusFilter(st)}
@@ -173,7 +164,7 @@ export const IntakeSheetTab: React.FC<IntakeSheetTabProps> = ({
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {st}
+                  {st === "ALL" ? "All" : STATUS_LABEL[st]}
                 </button>
               ))}
             </div>
@@ -198,20 +189,24 @@ export const IntakeSheetTab: React.FC<IntakeSheetTabProps> = ({
           <Table className="text-sm">
             <TableHeader className="bg-muted/30">
               <TableRow>
-                <TableHead className="font-bold">Control No.</TableHead>
-                <TableHead className="font-bold">Intake Date &amp; Time</TableHead>
-                <TableHead className="font-bold">Intake Type</TableHead>
-                <TableHead className="font-bold">Ward / Bed</TableHead>
-                <TableHead className="font-bold">Category</TableHead>
-                <TableHead className="font-bold">Evaluating RSW</TableHead>
+                <TableHead className="font-bold">Intake No.</TableHead>
+                <TableHead className="font-bold">Date of Intake</TableHead>
+                <TableHead className="font-bold">Referral Source</TableHead>
+                <TableHead className="font-bold">Intake Worker</TableHead>
                 <TableHead className="font-bold">Status</TableHead>
                 <TableHead className="text-right font-bold pr-6">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSheets.length === 0 ? (
+              {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                    Loading intake records…
+                  </TableCell>
+                </TableRow>
+              ) : filteredSheets.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
                     <div className="flex flex-col items-center justify-center gap-1">
                       <ClipboardList className="size-8 stroke-1 opacity-50" />
                       <p className="font-semibold text-sm">No intake sheet records found</p>
@@ -222,65 +217,98 @@ export const IntakeSheetTab: React.FC<IntakeSheetTabProps> = ({
               ) : (
                 filteredSheets.map((sheet) => (
                   <TableRow key={sheet.id} className="hover:bg-muted/20">
-                    <TableCell className="font-mono font-bold text-primary">
-                      {sheet.controlNo}
-                    </TableCell>
+                    <TableCell className="font-mono font-bold text-primary">{sheet.intake_no}</TableCell>
                     <TableCell className="font-medium text-foreground">
-                      <div className="flex flex-col">
-                        <span>{sheet.intakeDate}</span>
-                        <span className="text-[11px] font-mono text-muted-foreground">
-                          {sheet.intakeTime}
-                        </span>
-                      </div>
+                      {sheet.date_of_intake ? sheet.date_of_intake.slice(0, 10) : "—"}
                     </TableCell>
-                    <TableCell className="font-medium">{sheet.intakeType}</TableCell>
                     <TableCell className="text-xs text-muted-foreground font-medium">
-                      {sheet.ward} ({sheet.bedNo})
+                      {sheet.referral_source || "—"}
                     </TableCell>
+                    <TableCell className="text-xs font-medium">{workerLabel(sheet)}</TableCell>
                     <TableCell>
-                      <Badge variant="default" className="text-xs font-bold px-2.5 py-0.5">
-                        {sheet.category}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-xs font-medium">
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-foreground">{sheet.socialWorker}</span>
-                        <span className="font-mono text-[11px] text-muted-foreground">
-                          {sheet.socialWorkerId}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={getStatusBadgeVariant(sheet.status)}
-                        className="text-xs px-2.5 py-0.5 gap-1 text-emerald-600 border-emerald-500"
-                      >
-                        <CheckCircle2 className="size-3" /> {sheet.status}
+                      <Badge variant={statusBadgeVariant(sheet.status)} className="text-xs px-2.5 py-0.5 gap-1">
+                        <CheckCircle2 className="size-3" /> {STATUS_LABEL[sheet.status]}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right pr-6">
-                      <div className="flex items-center justify-end gap-1.5">
+                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
                         <Button
                           variant="outline"
                           size="sm"
                           className="h-8 px-2.5 text-xs gap-1 font-semibold"
-                          title="View / Print Document"
-                          onClick={() => setSelectedViewRecord(sheet)}
+                          onClick={() => setViewingId(sheet.id)}
                         >
-                          <Eye className="size-3.5 text-primary" /> View
+                          View
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 px-2.5 text-xs gap-1 font-semibold"
-                          title="Edit Intake Sheet"
-                          onClick={() => {
-                            setSelectedEditRecord(sheet)
-                            setIsWizardOpen(true)
-                          }}
-                        >
-                          <Edit className="size-3.5" /> Edit
-                        </Button>
+
+                        {(sheet.status === "draft" || sheet.status === "submitted") && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2.5 text-xs gap-1 font-semibold"
+                            onClick={() => {
+                              setEditingSheet(sheet)
+                              setIsWizardOpen(true)
+                            }}
+                          >
+                            <Edit className="size-3.5" /> Edit
+                          </Button>
+                        )}
+
+                        {sheet.status === "draft" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2.5 text-xs gap-1 font-semibold text-primary"
+                            disabled={submitMutation.isPending}
+                            onClick={() => submitMutation.mutate(sheet.id)}
+                          >
+                            <Send className="size-3.5" /> Submit
+                          </Button>
+                        )}
+
+                        {sheet.status === "submitted" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2.5 text-xs gap-1 font-semibold text-emerald-600"
+                            disabled={finalizeMutation.isPending}
+                            onClick={() => {
+                              if (window.confirm(`Finalize intake ${sheet.intake_no}? This cannot be undone.`)) {
+                                finalizeMutation.mutate(sheet.id)
+                              }
+                            }}
+                          >
+                            <FileCheck2 className="size-3.5" /> Finalize
+                          </Button>
+                        )}
+
+                        {sheet.status === "finalized" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2.5 text-xs gap-1 font-semibold"
+                            onClick={() => downloadIntakeSheetPdf(sheet.id, `${sheet.intake_no}.pdf`)}
+                          >
+                            <Download className="size-3.5" /> PDF
+                          </Button>
+                        )}
+
+                        {(sheet.status === "draft" || sheet.status === "submitted") && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2.5 text-xs gap-1 font-semibold text-destructive"
+                            disabled={cancelMutation.isPending}
+                            onClick={() => {
+                              if (window.confirm(`Cancel intake ${sheet.intake_no}?`)) {
+                                cancelMutation.mutate(sheet.id)
+                              }
+                            }}
+                          >
+                            <X className="size-3.5" /> Cancel
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -291,24 +319,20 @@ export const IntakeSheetTab: React.FC<IntakeSheetTabProps> = ({
         </CardContent>
       </Card>
 
-      {/* View Document Preview Modal */}
       <IntakeSheetViewModal
-        intakeSheet={selectedViewRecord}
-        patient={patient}
-        isOpen={Boolean(selectedViewRecord)}
-        onClose={() => setSelectedViewRecord(null)}
+        intakeSheetId={viewingId}
+        isOpen={viewingId !== null}
+        onClose={() => setViewingId(null)}
       />
 
-      {/* Creation / Edit Wizard Modal */}
       <IntakeSheetWizardModal
         isOpen={isWizardOpen}
         onClose={() => {
           setIsWizardOpen(false)
-          setSelectedEditRecord(null)
+          setEditingSheet(null)
         }}
         patient={patient}
-        initialRecord={selectedEditRecord}
-        onSave={handleCreateOrUpdateIntakeSheet}
+        initialSheet={editingSheet}
       />
     </div>
   )
