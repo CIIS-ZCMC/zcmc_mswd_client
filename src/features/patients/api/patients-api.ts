@@ -58,9 +58,13 @@ export function getCaseAssessments(caseId: number) {
 export interface CreateFamilyMemberPayload {
   name: string
   relationship?: string
+  birthdate?: string
+  sex?: string
   age?: number
   occupation?: string
   monthly_income?: number
+  educational_attainment?: string
+  contact_number?: string
   is_living_with_patient?: boolean
 }
 
@@ -72,6 +76,10 @@ export function createFamilyMember(patientId: number, payload: CreateFamilyMembe
 }
 
 export interface UpdatePatientBackgroundPayload {
+  contact_number?: string
+  address?: string
+  barangay?: string
+  municipality?: string
   religion?: string
   nationality?: string
   place_of_birth?: string

@@ -54,10 +54,14 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
     addFamilyMember.mutate({
       name: newFamily.fullName,
       relationship: newFamily.relationship,
+      birthdate: newFamily.birthdate || undefined,
+      sex: newFamily.sex || undefined,
       age: newFamily.age,
       occupation: newFamily.occupation,
       monthly_income: newFamily.monthlyIncome,
-      is_living_with_patient: newFamily.isDependent,
+      educational_attainment: newFamily.educationalAttainment || undefined,
+      contact_number: newFamily.contactNumber || undefined,
+      is_living_with_patient: newFamily.isLivingWithPatient,
     })
   }
 
@@ -79,38 +83,38 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
       <div className="border-b border-border bg-card p-6 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
-            <Avatar className="size-16 border-2 border-primary/30">
-              <AvatarFallback className="bg-primary/15 text-primary font-heading font-bold text-xl">
+            <Avatar className="size-18 border-2 border-primary/30">
+              <AvatarFallback className="bg-primary/15 text-primary font-heading font-bold text-2xl">
                 {patient.fullName.substring(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="font-heading text-2xl font-bold tracking-tight">
+                <h1 className="font-heading text-3xl font-extrabold tracking-tight">
                   {patient.fullName}
                 </h1>
-                <Badge variant="default" className="text-sm px-3 py-0.5 font-bold">
+                <Badge variant="default" className="text-sm px-3.5 py-1 font-bold">
                   {patient.category}
                 </Badge>
               </div>
 
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1.5 font-mono">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-base text-muted-foreground mt-2 font-mono">
                 <span>
                   Hosp ID:{" "}
-                  <strong className="text-foreground font-bold font-mono">
+                  <strong className="text-foreground font-bold font-mono text-base">
                     {patient.hospitalNo}
                   </strong>
                 </span>
                 <span>•</span>
                 <span>
                   MSWD ID:{" "}
-                  <strong className="text-foreground font-bold font-mono">
+                  <strong className="text-foreground font-bold font-mono text-base">
                     {patient.mswdNo}
                   </strong>
                 </span>
                 <span>•</span>
-                <span className="flex items-center gap-1.5 font-sans font-medium text-foreground">
-                  <Building2 className="size-4 text-primary" />
+                <span className="flex items-center gap-1.5 font-sans font-semibold text-foreground text-base">
+                  <Building2 className="size-5 text-primary" />
                   {patient.ward} ({patient.bedNo})
                 </span>
               </div>
@@ -121,18 +125,18 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
             <Button
               variant="outline"
               size="default"
-              className="gap-2 text-sm font-semibold h-10"
+              className="gap-2 text-base font-bold h-11 px-4"
               onClick={() => window.print()}
             >
-              <Printer className="size-4" />
+              <Printer className="size-5" />
               Print Case Study
             </Button>
             <Button
               variant="default"
               size="default"
-              className="gap-2 text-sm font-semibold h-10"
+              className="gap-2 text-base font-bold h-11 px-4"
             >
-              <Edit className="size-4" />
+              <Edit className="size-5" />
               Edit Status
             </Button>
           </div>
@@ -142,90 +146,90 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
       {/* Main 8-Tab Workspace */}
       <div className="flex-1 p-6 space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-6 flex flex-wrap w-full gap-2 h-auto p-1.5 bg-muted/50 rounded-2xl border border-border/60">
+          <TabsList className="mb-6 flex flex-wrap items-center justify-start w-full gap-2.5 group-data-horizontal/tabs:h-auto h-auto p-2 bg-muted/60 rounded-2xl border border-border/80 shadow-2xs">
             <TabsTrigger
               value="profile"
-              className="rounded-xl px-4 py-2.5 text-xs font-semibold gap-2 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xs transition-all"
+              className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
             >
-              <User className="size-4" />
+              <User className="size-5" />
               <span>Profile</span>
             </TabsTrigger>
 
             <TabsTrigger
-              value="intake-sheet"
-              className="rounded-xl px-4 py-2.5 text-xs font-semibold gap-2 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xs transition-all"
-            >
-              <ClipboardList className="size-4" />
-              <span>Intake Sheet</span>
-              <span className="ml-1 rounded-full bg-background/30 px-2 py-0.5 text-[10px] font-bold">
-                {intakeSheets.length}
-              </span>
-            </TabsTrigger>
-
-            <TabsTrigger
               value="id"
-              className="rounded-xl px-4 py-2.5 text-xs font-semibold gap-2 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xs transition-all"
+              className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
             >
-              <CreditCard className="size-4" />
+              <CreditCard className="size-5" />
               <span>IDs</span>
             </TabsTrigger>
 
             <TabsTrigger
               value="family"
-              className="rounded-xl px-4 py-2.5 text-xs font-semibold gap-2 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xs transition-all"
+              className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
             >
-              <Users className="size-4" />
+              <Users className="size-5" />
               <span>Family</span>
-              <span className="ml-1 rounded-full bg-background/30 px-2 py-0.5 text-[10px] font-bold">
+              <span className="ml-1 rounded-full bg-background/25 text-current px-2.5 py-0.5 text-xs font-black">
                 {patient.familyMembers.length}
               </span>
             </TabsTrigger>
 
             <TabsTrigger
               value="watchers"
-              className="rounded-xl px-4 py-2.5 text-xs font-semibold gap-2 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xs transition-all"
+              className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
             >
-              <Eye className="size-4" />
+              <Eye className="size-5" />
               <span>Watchers</span>
-              <span className="ml-1 rounded-full bg-background/30 px-2 py-0.5 text-[10px] font-bold">
+              <span className="ml-1 rounded-full bg-background/25 text-current px-2.5 py-0.5 text-xs font-black">
                 {patient.watchers.length}
               </span>
             </TabsTrigger>
 
             <TabsTrigger
               value="staff"
-              className="rounded-xl px-4 py-2.5 text-xs font-semibold gap-2 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xs transition-all"
+              className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
             >
-              <UserCheck className="size-4" />
+              <UserCheck className="size-5" />
               <span>Staff</span>
             </TabsTrigger>
 
             <TabsTrigger
               value="social-case"
-              className="rounded-xl px-4 py-2.5 text-xs font-semibold gap-2 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xs transition-all"
+              className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
             >
-              <FileSpreadsheet className="size-4" />
+              <FileSpreadsheet className="size-5" />
               <span>Social Case</span>
             </TabsTrigger>
 
             <TabsTrigger
-              value="documents"
-              className="rounded-xl px-4 py-2.5 text-xs font-semibold gap-2 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xs transition-all"
+              value="intake-sheet"
+              className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
             >
-              <FileText className="size-4" />
+              <ClipboardList className="size-5" />
+              <span>Intake Sheet</span>
+              <span className="ml-1 rounded-full bg-background/25 text-current px-2.5 py-0.5 text-xs font-black">
+                {intakeSheets.length}
+              </span>
+            </TabsTrigger>
+
+            <TabsTrigger
+              value="documents"
+              className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
+            >
+              <FileText className="size-5" />
               <span>Docs</span>
-              <span className="ml-1 rounded-full bg-background/30 px-2 py-0.5 text-[10px] font-bold">
+              <span className="ml-1 rounded-full bg-background/25 text-current px-2.5 py-0.5 text-xs font-black">
                 {patient.documents.length}
               </span>
             </TabsTrigger>
 
             <TabsTrigger
               value="history"
-              className="rounded-xl px-4 py-2.5 text-xs font-semibold gap-2 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-xs transition-all"
+              className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
             >
-              <History className="size-4" />
+              <History className="size-5" />
               <span>History</span>
-              <span className="ml-1 rounded-full bg-background/30 px-2 py-0.5 text-[10px] font-bold">
+              <span className="ml-1 rounded-full bg-background/25 text-current px-2.5 py-0.5 text-xs font-black">
                 {patient.history.length}
               </span>
             </TabsTrigger>
@@ -233,10 +237,6 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
 
           <TabsContent value="profile">
             <ProfileTab patient={patient} />
-          </TabsContent>
-
-          <TabsContent value="intake-sheet">
-            <IntakeSheetTab patient={patient} />
           </TabsContent>
 
           <TabsContent value="id">
@@ -263,6 +263,10 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
 
           <TabsContent value="social-case">
             <SocialCaseTab patient={patient} />
+          </TabsContent>
+
+          <TabsContent value="intake-sheet">
+            <IntakeSheetTab patient={patient} />
           </TabsContent>
 
           <TabsContent value="documents">

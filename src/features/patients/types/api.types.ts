@@ -43,9 +43,11 @@ export interface ApiFamilyMember {
   name: string
   relationship: string | null
   age: number | null
+  birthdate: string | null
+  sex: string | null
   occupation: string | null
   monthly_income: string | number | null
-  education: string | null
+  educational_attainment: string | null
   contact_number: string | null
   is_living_with_patient: boolean
 }
