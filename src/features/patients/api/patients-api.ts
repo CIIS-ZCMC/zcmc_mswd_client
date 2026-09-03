@@ -1,0 +1,106 @@
+import { apiClient } from "@/lib/api-client"
+import type {
+  ApiActivity,
+  ApiAssessment,
+  ApiCase,
+  ApiEnvelope,
+  ApiFamilyMember,
+  ApiPaginated,
+  ApiPatient,
+  ApiWatcher,
+} from "../types/api.types"
+
+export interface ListPatientsParams {
+  search?: string
+  page?: number
+  perPage?: number
+}
+
+/** GET /patients — the sidebar/table listing. Demographics only (no case data — see patients-adapter.ts). */
+export function listPatients(params: ListPatientsParams = {}) {
+  return apiClient.get<ApiPaginated<ApiPatient>>("/patients", {
+    params: { search: params.search, page: params.page, per_page: params.perPage ?? 100 },
+  })
+}
+
+/** GET /patients/{id}/profile — the consolidated 360 view (family, watchers, caretakers, ids, cases, documents). */
+export function getPatientProfile(patientId: number) {
+  return apiClient
+    .get<ApiEnvelope<ApiPatient>>(`/patients/${patientId}/profile`)
+    .then((res) => res.data)
+}
+
+/** GET /patients/{id}/history — field-level audit trail (spatie/activitylog), newest first. */
+export function getPatientHistory(patientId: number) {
+  return apiClient
+    .get<ApiEnvelope<ApiActivity[]>>(`/patients/${patientId}/history`)
+    .then((res) => res.data)
+}
+
+/**
+ * The patient's most recent case (episode), or null if none exists yet.
+ * `cases.date_opened desc` is CaseModelRepository's default sort, so the
+ * first row of a 1-item page is the latest.
+ */
+export function getLatestCaseForPatient(patientId: number) {
+  return apiClient
+    .get<ApiPaginated<ApiCase>>("/cases", { filters: { patient_id: patientId }, params: { per_page: 1 } })
+    .then((res) => res.data[0] ?? null)
+}
+
+/** GET /cases/{id}/assessments — already returned newest-first by the controller. */
+export function getCaseAssessments(caseId: number) {
+  return apiClient
+    .get<ApiEnvelope<ApiAssessment[]>>(`/cases/${caseId}/assessments`)
+    .then((res) => res.data)
+}
+
+export interface CreateFamilyMemberPayload {
+  name: string
+  relationship?: string
+  age?: number
+  occupation?: string
+  monthly_income?: number
+  is_living_with_patient?: boolean
+}
+
+/** POST /patients/{id}/family-members */
+export function createFamilyMember(patientId: number, payload: CreateFamilyMemberPayload) {
+  return apiClient
+    .post<ApiEnvelope<ApiFamilyMember>>(`/patients/${patientId}/family-members`, payload)
+    .then((res) => res.data)
+}
+
+export interface UpdatePatientBackgroundPayload {
+  religion?: string
+  nationality?: string
+  place_of_birth?: string
+  permanent_address?: string
+  present_address?: string
+  educational_attainment?: string
+  occupation?: string
+  employer?: string
+  monthly_income?: number
+}
+
+/** PUT /patients/{id} — used here for just the background/economic fields; the patient stays the source of truth, editable independent of any one intake. */
+export function updatePatientBackground(patientId: number, payload: UpdatePatientBackgroundPayload) {
+  return apiClient
+    .put<ApiEnvelope<ApiPatient>>(`/patients/${patientId}`, payload)
+    .then((res) => res.data)
+}
+
+export interface CreateWatcherPayload {
+  name: string
+  relationship?: string
+  contact_number?: string
+  address?: string
+  is_primary?: boolean
+}
+
+/** POST /patients/{id}/watchers */
+export function createWatcher(patientId: number, payload: CreateWatcherPayload) {
+  return apiClient
+    .post<ApiEnvelope<ApiWatcher>>(`/patients/${patientId}/watchers`, payload)
+    .then((res) => res.data)
+}
