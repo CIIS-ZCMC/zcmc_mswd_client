@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useTheme } from "@/providers/theme-provider"
-import { Activity, Moon, Plus, Sun, UserCheck } from "lucide-react"
+import { useAuth } from "@/features/auth/hooks/use-auth"
+import { Activity, LogOut, Moon, Plus, Sun, UserCheck } from "lucide-react"
 
 interface HeaderProps {
   onNewIntake?: () => void
@@ -11,10 +12,13 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onNewIntake }) => {
   const { theme, setTheme } = useTheme()
+  const { user, logout, isLoggingOut } = useAuth()
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark")
   }
+
+  const displayName = user?.employee_name || user?.email || "—"
 
   return (
     <header className="flex h-15 shrink-0 items-center justify-between border-b border-border bg-card px-5 py-2.5 shadow-2xs">
@@ -44,7 +48,7 @@ export const Header: React.FC<HeaderProps> = ({ onNewIntake }) => {
         <div className="h-5 w-px bg-border mx-1" />
         <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground mr-2">
           <UserCheck className="size-4 text-primary" />
-          <span className="font-semibold text-foreground text-sm">Maria Santos, RSW</span>
+          <span className="font-semibold text-foreground text-sm">{displayName}</span>
         </div>
         <Tooltip>
           <TooltipTrigger>
@@ -62,6 +66,20 @@ export const Header: React.FC<HeaderProps> = ({ onNewIntake }) => {
             </Button>
           </TooltipTrigger>
           <TooltipContent>Toggle Theme (Press &apos;d&apos;)</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger>
+            <Button
+              variant="outline"
+              size="default"
+              className="h-10 w-10 p-0"
+              onClick={() => logout()}
+              disabled={isLoggingOut}
+            >
+              <LogOut className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Sign Out</TooltipContent>
         </Tooltip>
       </div>
     </header>
