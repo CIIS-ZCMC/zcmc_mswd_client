@@ -7,16 +7,20 @@
  */
 export type MedicalCategory = string
 
+/** Mirrors the backend `patient_family_members` columns one-for-one. */
 export interface FamilyMember {
   id: string
   fullName: string
   relationship: string
+  /** Normalized to `YYYY-MM-DD`; the API emits a full ISO datetime. */
+  birthdate: string
+  sex: string
   age: number
-  /** Not used by the current Family tab UI; kept optional for mock-data compatibility. */
-  civilStatus?: string
   occupation: string
   monthlyIncome: number
-  isDependent: boolean
+  educationalAttainment: string
+  contactNumber: string
+  isLivingWithPatient: boolean
 }
 
 export interface StaffAssignment {

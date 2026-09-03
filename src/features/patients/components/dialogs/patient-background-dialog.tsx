@@ -57,97 +57,126 @@ export const PatientBackgroundDialog: React.FC<PatientBackgroundDialogProps> = (
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+      <DialogContent className="w-fit max-w-xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold">Edit Background &amp; Economic Profile</DialogTitle>
-          <DialogDescription className="text-xs">
+          <DialogTitle className="text-xl font-bold">Edit Background &amp; Economic Profile</DialogTitle>
+          <DialogDescription className="text-sm">
             Saved directly to {patient.fullName}&apos;s patient record.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-3 text-sm">
-          <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-6 py-4 text-base">
+          {/* Section 1: Demographics */}
+          <div className="space-y-3.5">
+            <h4 className="font-bold text-sm uppercase tracking-wider text-primary border-b border-border/60 pb-1.5">
+              Personal Demographics
+            </h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-bold">Religion</Label>
+                <Input
+                  value={form.religion}
+                  onChange={(e) => setForm({ ...form, religion: e.target.value })}
+                  className="h-11 text-base mt-1"
+                  placeholder="e.g. Roman Catholic"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-bold">Nationality</Label>
+                <Input
+                  value={form.nationality}
+                  onChange={(e) => setForm({ ...form, nationality: e.target.value })}
+                  className="h-11 text-base mt-1"
+                  placeholder="e.g. Filipino"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-bold">Place of Birth</Label>
+                <Input
+                  value={form.place_of_birth}
+                  onChange={(e) => setForm({ ...form, place_of_birth: e.target.value })}
+                  className="h-11 text-base mt-1"
+                  placeholder="City / Municipality"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-bold">Educational Attainment</Label>
+                <Input
+                  value={form.educational_attainment}
+                  onChange={(e) => setForm({ ...form, educational_attainment: e.target.value })}
+                  className="h-11 text-base mt-1"
+                  placeholder="Highest level reached"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Residence & Addresses */}
+          <div className="space-y-3.5">
+            <h4 className="font-bold text-sm uppercase tracking-wider text-primary border-b border-border/60 pb-1.5">
+              Residence &amp; Addresses
+            </h4>
             <div>
-              <Label className="text-xs font-semibold">Religion</Label>
+              <Label className="text-sm font-bold">Present Address</Label>
               <Input
-                value={form.religion}
-                onChange={(e) => setForm({ ...form, religion: e.target.value })}
-                className="h-10 mt-1"
+                value={form.present_address}
+                onChange={(e) => setForm({ ...form, present_address: e.target.value })}
+                className="h-11 text-base mt-1"
+                placeholder="Current living address"
               />
             </div>
             <div>
-              <Label className="text-xs font-semibold">Nationality</Label>
+              <Label className="text-sm font-bold">Permanent Address</Label>
               <Input
-                value={form.nationality}
-                onChange={(e) => setForm({ ...form, nationality: e.target.value })}
-                className="h-10 mt-1"
+                value={form.permanent_address}
+                onChange={(e) => setForm({ ...form, permanent_address: e.target.value })}
+                className="h-11 text-base mt-1"
+                placeholder="Hometown / Permanent address"
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs font-semibold">Place of Birth</Label>
-              <Input
-                value={form.place_of_birth}
-                onChange={(e) => setForm({ ...form, place_of_birth: e.target.value })}
-                className="h-10 mt-1"
-              />
-            </div>
-            <div>
-              <Label className="text-xs font-semibold">Educational Attainment</Label>
-              <Input
-                value={form.educational_attainment}
-                onChange={(e) => setForm({ ...form, educational_attainment: e.target.value })}
-                className="h-10 mt-1"
-              />
-            </div>
-          </div>
-          <div>
-            <Label className="text-xs font-semibold">Permanent Address</Label>
-            <Input
-              value={form.permanent_address}
-              onChange={(e) => setForm({ ...form, permanent_address: e.target.value })}
-              className="h-10 mt-1"
-            />
-          </div>
-          <div>
-            <Label className="text-xs font-semibold">Present Address</Label>
-            <Input
-              value={form.present_address}
-              onChange={(e) => setForm({ ...form, present_address: e.target.value })}
-              className="h-10 mt-1"
-            />
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <Label className="text-xs font-semibold">Occupation</Label>
-              <Input
-                value={form.occupation}
-                onChange={(e) => setForm({ ...form, occupation: e.target.value })}
-                className="h-10 mt-1"
-              />
-            </div>
-            <div>
-              <Label className="text-xs font-semibold">Employer</Label>
-              <Input
-                value={form.employer}
-                onChange={(e) => setForm({ ...form, employer: e.target.value })}
-                className="h-10 mt-1"
-              />
-            </div>
-            <div>
-              <Label className="text-xs font-semibold">Monthly Income (₱)</Label>
-              <Input
-                type="number"
-                value={form.monthly_income}
-                onChange={(e) => setForm({ ...form, monthly_income: e.target.value })}
-                className="h-10 mt-1 font-mono"
-              />
+
+          {/* Section 3: Socio-Economic */}
+          <div className="space-y-3.5">
+            <h4 className="font-bold text-sm uppercase tracking-wider text-primary border-b border-border/60 pb-1.5">
+              Socio-Economic &amp; Employment
+            </h4>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label className="text-sm font-bold">Occupation</Label>
+                <Input
+                  value={form.occupation}
+                  onChange={(e) => setForm({ ...form, occupation: e.target.value })}
+                  className="h-11 text-base mt-1"
+                  placeholder="e.g. Driver, Farmer"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-bold">Employer</Label>
+                <Input
+                  value={form.employer}
+                  onChange={(e) => setForm({ ...form, employer: e.target.value })}
+                  className="h-11 text-base mt-1"
+                  placeholder="Company / Self-employed"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-bold">Monthly Income (₱)</Label>
+                <Input
+                  type="number"
+                  value={form.monthly_income}
+                  onChange={(e) => setForm({ ...form, monthly_income: e.target.value })}
+                  className="h-11 text-base mt-1 font-mono"
+                  placeholder="0.00"
+                />
+              </div>
             </div>
           </div>
         </div>
         <DialogFooter>
-          <Button size="default" className="h-10 font-bold px-6" disabled={isSaving} onClick={handleSave}>
-            {isSaving ? <Spinner className="size-4" /> : "Save"}
+          <Button size="lg" className="h-11 text-base font-bold px-8" disabled={isSaving} onClick={handleSave}>
+            {isSaving ? <Spinner className="size-5" /> : "Save Profile Details"}
           </Button>
         </DialogFooter>
       </DialogContent>

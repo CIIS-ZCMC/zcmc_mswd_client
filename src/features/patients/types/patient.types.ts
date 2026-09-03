@@ -13,6 +13,16 @@ export type AdmissionStatus = string
 export type Gender = string
 export type CivilStatus = string
 
+export interface PatientIdCredential {
+  id: string
+  idType: string
+  idNumber: string
+  dateIssued?: string
+  dateExpiry?: string
+  isVerified?: boolean
+  status?: string
+}
+
 export interface PatientRecord {
   id: string
   hospitalNo: string
@@ -35,6 +45,7 @@ export interface PatientRecord {
   philHealthNo: string
   seniorCitizenId?: string
   pwdId?: string
+  customIds?: PatientIdCredential[]
   /**
    * Background/economic profile — all optional since older mock data and any
    * patient created before this field set existed won't have them on file.

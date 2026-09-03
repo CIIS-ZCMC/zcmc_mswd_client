@@ -51,7 +51,7 @@ export const WatcherDialog: React.FC<WatcherDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="w-fit max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold">Issue Watcher Pass</DialogTitle>
           <DialogDescription className="text-xs">

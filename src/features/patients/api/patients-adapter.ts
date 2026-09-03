@@ -19,7 +19,7 @@
 import type { FamilyMember, MedicalCategory, StaffAssignment } from "../types/case-study.types"
 import type { DocumentItem } from "../types/document.types"
 import type { AuditHistory } from "../types/audit.types"
-import type { PatientRecord } from "../types/patient.types"
+import type { PatientIdCredential, PatientRecord } from "../types/patient.types"
 import type { Watcher } from "../types/watcher.types"
 import type {
   ApiActivity,
@@ -106,10 +106,16 @@ function toFamilyMember(raw: ApiFamilyMember): FamilyMember {
     id: String(raw.id),
     fullName: raw.name,
     relationship: raw.relationship ?? "",
+    // The resource casts this to a date, so it arrives as a full ISO datetime;
+    // trim it to what <input type="date"> accepts.
+    birthdate: raw.birthdate?.slice(0, 10) ?? "",
+    sex: raw.sex ?? "",
     age: raw.age ?? 0,
     occupation: raw.occupation ?? "",
     monthlyIncome: raw.monthly_income != null ? Number(raw.monthly_income) : 0,
-    isDependent: raw.is_living_with_patient,
+    educationalAttainment: raw.educational_attainment ?? "",
+    contactNumber: raw.contact_number ?? "",
+    isLivingWithPatient: raw.is_living_with_patient,
   }
 }
 
@@ -169,6 +175,18 @@ function buildAssignedStaff(latestCase: ApiCase | null | undefined): StaffAssign
  * ward/bed, admission status and intake date are only available once a
  * patient's detail is opened — see `toPatientDetailRecord`.
  */
+function toPatientIdCredential(raw: ApiPatientId): PatientIdCredential {
+  return {
+    id: String(raw.id),
+    idType: raw.id_type,
+    idNumber: raw.id_number,
+    dateIssued: raw.date_issued ?? undefined,
+    dateExpiry: raw.date_expiry ?? undefined,
+    isVerified: raw.is_verified,
+    status: raw.is_verified ? "Verified" : "Active",
+  }
+}
+
 export function toPatientListRecord(raw: ApiPatient): PatientRecord {
   return {
     id: String(raw.id),
@@ -192,6 +210,7 @@ export function toPatientListRecord(raw: ApiPatient): PatientRecord {
     philHealthNo: findIdNumber(raw.patient_ids, ["philhealth", "phic"]) ?? "",
     seniorCitizenId: findIdNumber(raw.patient_ids, ["senior"]),
     pwdId: findIdNumber(raw.patient_ids, ["pwd"]),
+    customIds: (raw.patient_ids ?? []).map(toPatientIdCredential),
     religion: raw.religion ?? undefined,
     nationality: raw.nationality ?? undefined,
     placeOfBirth: raw.place_of_birth ?? undefined,
