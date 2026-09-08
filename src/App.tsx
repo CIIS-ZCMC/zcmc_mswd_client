@@ -1,3 +1,4 @@
+import { useMemo } from "react"
 import { MainLayout } from "@/components/layout/main-layout"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Spinner } from "@/components/ui/spinner"
@@ -9,8 +10,23 @@ import { ThemeProvider } from "@/providers/theme-provider"
 
 export function App() {
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
-  const { patients, selectedPatientId, setSelectedPatientId } = usePatients()
-  const { patient: selectedPatient, setLocalPatient } = usePatientDetail(selectedPatientId)
+  const patientsState = usePatients()
+  const { patient: selectedPatient, setLocalPatient } = usePatientDetail(patientsState.selectedPatientId)
+
+  const filterDateValue = useMemo(() => {
+    return patientsState.intakeDate ? new Date(patientsState.intakeDate) : undefined
+  }, [patientsState.intakeDate])
+
+  const handleDateChange = (date?: Date) => {
+    if (!date) {
+      patientsState.setIntakeDate(undefined)
+    } else {
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, "0")
+      const day = String(date.getDate()).padStart(2, "0")
+      patientsState.setIntakeDate(`${year}-${month}-${day}`)
+    }
+  }
 
   return (
     <ThemeProvider defaultTheme="system" storageKey="zcmc-mswd-theme">
@@ -21,11 +37,22 @@ export function App() {
           </div>
         ) : isAuthenticated ? (
           <MainLayout
-            patients={patients}
+            patients={patientsState.patients}
             selectedPatient={selectedPatient}
-            selectedPatientId={selectedPatientId}
-            onSelectPatient={setSelectedPatientId}
+            selectedPatientId={patientsState.selectedPatientId}
+            onSelectPatient={patientsState.setSelectedPatientId}
             onUpdatePatient={setLocalPatient}
+            page={patientsState.page}
+            totalPages={patientsState.totalPages}
+            total={patientsState.total}
+            onPageChange={patientsState.setPage}
+            searchQuery={patientsState.search}
+            onSearchChange={patientsState.setSearch}
+            selectedCategory={patientsState.classification}
+            onCategoryChange={patientsState.setClassification}
+            filterDate={filterDateValue}
+            onDateChange={handleDateChange}
+            onClearFilters={patientsState.clearFilters}
           />
         ) : (
           <LoginForm />

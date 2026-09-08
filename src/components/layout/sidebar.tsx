@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react"
+import React from "react"
 import type { PatientRecord } from "@/features/patients/types"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -10,6 +10,7 @@ import {
   User,
   Building2,
   FilterX,
+  ChevronLeft,
   ChevronRight,
   ShieldCheck,
 } from "lucide-react"
@@ -19,49 +20,35 @@ interface SidebarProps {
   patients: PatientRecord[]
   selectedPatientId: string
   onSelectPatient: (patientId: string) => void
+  page: number
+  totalPages: number
+  total: number
+  onPageChange: (page: number) => void
+  searchQuery: string
+  onSearchChange: (search: string) => void
+  selectedCategory: string
+  onCategoryChange: (category: string) => void
+  filterDate?: Date
+  onDateChange: (date?: Date) => void
+  onClearFilters: () => void
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   patients,
   selectedPatientId,
   onSelectPatient,
+  page,
+  totalPages,
+  total,
+  onPageChange,
+  searchQuery,
+  onSearchChange,
+  selectedCategory,
+  onCategoryChange,
+  filterDate,
+  onDateChange,
+  onClearFilters,
 }) => {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState<string>("ALL")
-  const [filterDate, setFilterDate] = useState<Date | undefined>(undefined)
-
-  const filteredPatients = useMemo(() => {
-    return patients.filter((patient) => {
-      const matchesSearch =
-        searchQuery === "" ||
-        patient.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        patient.hospitalNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        patient.mswdNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        patient.barangay.toLowerCase().includes(searchQuery.toLowerCase())
-
-      const matchesCategory =
-        selectedCategory === "ALL" || patient.category === selectedCategory
-
-      let matchesDate = true
-      if (filterDate) {
-        const formattedFilterDate = filterDate.toISOString().split("T")[0]
-        matchesDate = patient.intakeDate === formattedFilterDate
-      }
-
-      return matchesSearch && matchesCategory && matchesDate
-    })
-  }, [patients, searchQuery, selectedCategory, filterDate])
-
-  const clearFilters = () => {
-    setSearchQuery("")
-    setSelectedCategory("ALL")
-    setFilterDate(undefined)
-  }
-
-  // Backend classification values (assessments.classification is a free
-  // string, no enum): indigent, low_income, self_sufficient, others.
-  // Replaces the old "Category C1-D" scheme, which never existed in the
-  // backend at all.
   const getCategoryBadgeVariant = (category: string) => {
     switch (category) {
       case "Indigent":
@@ -72,6 +59,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         return "outline"
     }
   }
+
+  const hasActiveFilters = searchQuery !== "" || selectedCategory !== "ALL" || filterDate !== undefined
 
   return (
     <aside className="flex h-full w-88 flex-col border-r border-border bg-card/60 text-foreground transition-colors duration-200">
@@ -85,7 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </h2>
           </div>
           <Badge variant="secondary" className="font-mono text-xs px-2 py-0.5">
-            {filteredPatients.length} Patients
+            {total} {total === 1 ? "Patient" : "Patients"}
           </Badge>
         </div>
 
@@ -95,7 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Input
             placeholder="Search patient, hospital #..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => onSearchChange(e.target.value)}
             className="pl-9 text-sm h-10 border-border/80 focus-visible:ring-2"
           />
         </div>
@@ -104,15 +93,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex items-center gap-2">
           <DatePicker
             date={filterDate}
-            setDate={setFilterDate}
+            setDate={onDateChange}
             placeholder="Filter intake date"
             className="h-10 w-full text-xs"
           />
-          {(searchQuery || selectedCategory !== "ALL" || filterDate) && (
+          {hasActiveFilters && (
             <Button
               variant="outline"
               size="sm"
-              onClick={clearFilters}
+              onClick={onClearFilters}
               title="Clear filters"
               className="h-10 px-2.5 shrink-0"
             >
@@ -127,7 +116,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             (cat) => (
               <button
                 key={cat}
-                onClick={() => setSelectedCategory(cat)}
+                onClick={() => onCategoryChange(cat)}
                 className={cn(
                   "rounded-full px-2.5 py-1 text-xs font-semibold transition-all border cursor-pointer",
                   selectedCategory === cat
@@ -144,17 +133,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Patient List Items */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
-        {filteredPatients.length === 0 ? (
+        {patients.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
             <User className="size-10 mb-2 stroke-1 opacity-50" />
             <p className="text-sm font-semibold">No patients found</p>
             <p className="text-xs mt-1">Try clearing your search or date filter.</p>
-            <Button variant="outline" size="sm" className="mt-4" onClick={clearFilters}>
+            <Button variant="outline" size="sm" className="mt-4" onClick={onClearFilters}>
               Reset Filters
             </Button>
           </div>
         ) : (
-          filteredPatients.map((patient) => {
+          patients.map((patient) => {
             const isSelected = patient.id === selectedPatientId
             return (
               <div
@@ -215,6 +204,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )
           })
         )}
+      </div>
+
+      {/* Pager Footer */}
+      <div className="flex items-center justify-between border-t border-border p-3 text-xs text-muted-foreground bg-card/80">
+        <span>
+          Page <strong className="text-foreground">{page}</strong> of{" "}
+          <strong className="text-foreground">{totalPages}</strong>
+        </span>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="icon"
+            className="size-7"
+            disabled={page <= 1}
+            onClick={() => onPageChange(page - 1)}
+            title="Previous Page"
+          >
+            <ChevronLeft className="size-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="size-7"
+            disabled={page >= totalPages}
+            onClick={() => onPageChange(page + 1)}
+            title="Next Page"
+          >
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
       </div>
     </aside>
   )

@@ -14,12 +14,23 @@ export interface ListPatientsParams {
   search?: string
   page?: number
   perPage?: number
+  classification?: string
+  intakeDate?: string
 }
 
-/** GET /patients — the sidebar/table listing. Demographics only (no case data — see patients-adapter.ts). */
+/** GET /patients — the sidebar/table listing. Supports pagination and server-side filters. */
 export function listPatients(params: ListPatientsParams = {}) {
   return apiClient.get<ApiPaginated<ApiPatient>>("/patients", {
-    params: { search: params.search, page: params.page, per_page: params.perPage ?? 100 },
+    params: {
+      search: params.search || undefined,
+      page: params.page ?? 1,
+      per_page: params.perPage ?? 25,
+    },
+    filters: {
+      classification:
+        params.classification && params.classification !== "ALL" ? params.classification : undefined,
+      intake_date: params.intakeDate || undefined,
+    },
   })
 }
 
