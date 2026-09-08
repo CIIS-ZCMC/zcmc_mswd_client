@@ -10,6 +10,9 @@ export interface ApiPaginationMeta {
   last_page: number
   per_page: number
   total: number
+  from: number | null
+  to: number | null
+  path: string
 }
 
 export interface ApiPaginated<T> {
@@ -25,6 +28,9 @@ export interface ApiEnvelope<T> {
 export interface ApiSector {
   id: number
   name: string
+  code: string | null
+  created_at?: string
+  updated_at?: string
 }
 
 export interface ApiPatientId {
@@ -35,6 +41,8 @@ export interface ApiPatientId {
   date_issued: string | null
   date_expiry: string | null
   is_verified: boolean
+  created_at?: string
+  updated_at?: string
 }
 
 export interface ApiFamilyMember {
@@ -50,6 +58,8 @@ export interface ApiFamilyMember {
   educational_attainment: string | null
   contact_number: string | null
   is_living_with_patient: boolean
+  created_at?: string
+  updated_at?: string
 }
 
 export interface ApiWatcher {
@@ -60,6 +70,8 @@ export interface ApiWatcher {
   contact_number: string | null
   address: string | null
   is_primary: boolean
+  created_at?: string
+  updated_at?: string
 }
 
 export interface ApiCaretaker {
@@ -70,6 +82,8 @@ export interface ApiCaretaker {
   assigned_date: string
   unassigned_date: string | null
   is_active: boolean
+  created_at?: string
+  updated_at?: string
 }
 
 export interface ApiDocument {
@@ -103,6 +117,12 @@ export interface ApiCase {
   date_opened: string | null
   date_closed: string | null
   assigned_user?: ApiUserLite | null
+  patient?: ApiPatient
+  diagnostics_count?: number
+  assessments_count?: number
+  interventions_count?: number
+  documents_count?: number
+  activities_count?: number
   created_at: string
   updated_at: string
 }
@@ -179,6 +199,9 @@ export interface ApiPatient {
   family_members_count?: number
   watchers_count?: number
   documents_count?: number
+  /** Profile-only embedded relations (not returned on GET /patients list items) */
+  latest_case?: ApiCase
+  latest_assessment?: ApiAssessment
   sector?: ApiSector
   patient_ids?: ApiPatientId[]
   family_members?: ApiFamilyMember[]
@@ -232,6 +255,7 @@ export interface ApiUnifiedIntakeSheet {
   patient?: ApiPatient
   case?: ApiCase
   assessment?: ApiAssessment
+  intake_worker?: ApiUserLite | null
   created_at: string
   updated_at: string
 }
