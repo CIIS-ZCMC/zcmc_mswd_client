@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { usePermission } from "@/features/auth/hooks/use-permission"
 import {
   getCaseAssessments,
   getLatestCaseForPatient,
@@ -22,12 +23,12 @@ export function patientDetailKeys(patientId: number) {
 /**
  * The enriched detail view for one patient: profile (family/watchers/
  * caretakers/ids/documents) + most recent case + that case's most recent
- * assessment + audit history. Four requests, run in parallel, only once a
- * patient is selected.
+ * assessment + audit history. Runs in parallel, gated by user permissions.
  */
 export function usePatientDetail(patientId: string) {
   const numericId = Number(patientId)
   const enabled = patientId !== "" && !Number.isNaN(numericId)
+  const canViewCases = usePermission("cases.view")
   const keys = patientDetailKeys(numericId)
 
   const profileQuery = useQuery({
@@ -39,7 +40,7 @@ export function usePatientDetail(patientId: string) {
   const latestCaseQuery = useQuery({
     queryKey: keys.latestCase,
     queryFn: () => getLatestCaseForPatient(numericId),
-    enabled,
+    enabled: enabled && canViewCases,
   })
 
   const latestCaseId = latestCaseQuery.data?.id
@@ -47,7 +48,7 @@ export function usePatientDetail(patientId: string) {
   const assessmentsQuery = useQuery({
     queryKey: latestCaseId ? keys.assessments(latestCaseId) : ["cases", "none", "assessments"],
     queryFn: () => getCaseAssessments(latestCaseId as number),
-    enabled: Boolean(latestCaseId),
+    enabled: Boolean(latestCaseId) && canViewCases,
   })
 
   const historyQuery = useQuery({
@@ -60,11 +61,11 @@ export function usePatientDetail(patientId: string) {
     if (!profileQuery.data) return undefined
 
     return toPatientDetailRecord(profileQuery.data, {
-      latestCase: latestCaseQuery.data ?? null,
-      latestAssessment: assessmentsQuery.data?.[0] ?? null,
+      latestCase: canViewCases ? (latestCaseQuery.data ?? null) : null,
+      latestAssessment: canViewCases ? (assessmentsQuery.data?.[0] ?? null) : null,
       history: historyQuery.data ?? [],
     })
-  }, [profileQuery.data, latestCaseQuery.data, assessmentsQuery.data, historyQuery.data])
+  }, [profileQuery.data, latestCaseQuery.data, assessmentsQuery.data, historyQuery.data, canViewCases])
 
   /**
    * Local overlay on top of the server-derived record — needed only because
@@ -92,6 +93,11 @@ export function usePatientDetail(patientId: string) {
     patient: localPatient,
     setLocalPatient,
     isLoading: enabled && (profileQuery.isPending || historyQuery.isPending),
-    error: profileQuery.error ?? latestCaseQuery.error ?? assessmentsQuery.error ?? historyQuery.error ?? null,
+    error:
+      profileQuery.error ??
+      (canViewCases ? latestCaseQuery.error : null) ??
+      (canViewCases ? assessmentsQuery.error : null) ??
+      historyQuery.error ??
+      null,
   }
 }
