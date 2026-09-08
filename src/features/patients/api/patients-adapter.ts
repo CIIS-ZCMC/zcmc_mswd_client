@@ -170,10 +170,8 @@ function buildAssignedStaff(latestCase: ApiCase | null | undefined): StaffAssign
 }
 
 /**
- * List-view mapping: demographics only, no per-patient case/assessment
- * fetch (that would be N+1 across a whole page of patients). Category,
- * ward/bed, admission status and intake date are only available once a
- * patient's detail is opened — see `toPatientDetailRecord`.
+ * List-view mapping: reads demographics along with embedded relations
+ * (`latest_case`, `latest_assessment`) eager-loaded by the server.
  */
 function toPatientIdCredential(raw: ApiPatientId): PatientIdCredential {
   return {
@@ -188,6 +186,9 @@ function toPatientIdCredential(raw: ApiPatientId): PatientIdCredential {
 }
 
 export function toPatientListRecord(raw: ApiPatient): PatientRecord {
+  const latestCase = raw.latest_case
+  const latestAssessment = raw.latest_assessment
+
   return {
     id: String(raw.id),
     hospitalNo: raw.hospital_id != null ? String(raw.hospital_id) : "—",
@@ -201,12 +202,12 @@ export function toPatientListRecord(raw: ApiPatient): PatientRecord {
     address: raw.address ?? "",
     barangay: raw.barangay ?? "",
     city: raw.municipality ?? "",
-    intakeDate: raw.created_at,
-    admissionStatus: "Unknown",
+    intakeDate: latestCase?.date_opened ?? raw.created_at,
+    admissionStatus: latestCase?.admission_type ?? "Unknown",
     ward: NOT_ON_FILE,
     bedNo: NOT_ON_FILE,
     diagnosis: "Not recorded in this view",
-    category: "Unclassified",
+    category: classificationLabel(latestAssessment?.classification),
     philHealthNo: findIdNumber(raw.patient_ids, ["philhealth", "phic"]) ?? "",
     seniorCitizenId: findIdNumber(raw.patient_ids, ["senior"]),
     pwdId: findIdNumber(raw.patient_ids, ["pwd"]),
@@ -222,14 +223,14 @@ export function toPatientListRecord(raw: ApiPatient): PatientRecord {
     monthlyIncome: raw.monthly_income != null ? Number(raw.monthly_income) : undefined,
     familyMembers: (raw.family_members ?? []).map(toFamilyMember),
     watchers: (raw.watchers ?? []).map(toWatcher),
-    assignedStaff: buildAssignedStaff(null),
+    assignedStaff: buildAssignedStaff(latestCase),
     caseStudy: {
-      caseNumber: "No active case",
-      assessmentDate: "",
-      category: "Unclassified",
-      classificationDetails: buildClassificationSummary(null),
-      presentingProblem: "",
-      socialWorkerNotes: "",
+      caseNumber: latestCase?.case_code ?? "No active case",
+      assessmentDate: latestAssessment?.created_at ?? "",
+      category: classificationLabel(latestAssessment?.classification),
+      classificationDetails: buildClassificationSummary(latestAssessment),
+      presentingProblem: latestAssessment?.presenting_problem ?? "",
+      socialWorkerNotes: latestAssessment?.assessment_notes ?? "",
       // Belongs to the (separately phased) Financial Assistance module.
       recommendedAssistance: NOT_ON_FILE,
       approvedAmount: undefined,
@@ -242,11 +243,14 @@ export function toPatientListRecord(raw: ApiPatient): PatientRecord {
 /**
  * Detail-view mapping: the same base fields as the list, enriched with the
  * patient's most recent case + assessment + audit history — the extra
- * calls `usePatientDetail` makes that a list row doesn't.
+ * calls `usePatientDetail` makes that a list row doesn't. Falls back to
+ * `raw.latest_case` / `raw.latest_assessment` if extras are absent.
  */
 export function toPatientDetailRecord(raw: ApiPatient, extras: PatientDetailExtras): PatientRecord {
   const base = toPatientListRecord(raw)
-  const { latestCase, latestAssessment, history = [] } = extras
+  const latestCase = extras.latestCase ?? raw.latest_case
+  const latestAssessment = extras.latestAssessment ?? raw.latest_assessment
+  const { history = [] } = extras
 
   return {
     ...base,

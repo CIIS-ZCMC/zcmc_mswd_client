@@ -27,8 +27,12 @@ export interface IntakeCasePayload {
 export interface IntakeAssessmentPayload {
   classification: string
   total_family_income?: number
+  housing_type?: string
+  utilities_access?: string
   presenting_problem?: string
   family_background?: string
+  social_functioning?: string
+  assessment_notes?: string
   intervention_plan?: string
 }
 
