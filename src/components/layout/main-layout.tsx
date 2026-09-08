@@ -11,6 +11,17 @@ interface MainLayoutProps {
   selectedPatientId: string
   onSelectPatient: (id: string) => void
   onUpdatePatient: (updated: PatientRecord) => void
+  page: number
+  totalPages: number
+  total: number
+  onPageChange: (page: number) => void
+  searchQuery: string
+  onSearchChange: (search: string) => void
+  selectedCategory: string
+  onCategoryChange: (category: string) => void
+  filterDate?: Date
+  onDateChange: (date?: Date) => void
+  onClearFilters: () => void
 }
 
 export const MainLayout: React.FC<MainLayoutProps> = ({
@@ -19,6 +30,17 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   selectedPatientId,
   onSelectPatient,
   onUpdatePatient,
+  page,
+  totalPages,
+  total,
+  onPageChange,
+  searchQuery,
+  onSearchChange,
+  selectedCategory,
+  onCategoryChange,
+  filterDate,
+  onDateChange,
+  onClearFilters,
 }) => {
   return (
     <div className="flex h-screen flex-col bg-background text-foreground transition-colors duration-200 overflow-hidden font-sans">
@@ -28,6 +50,17 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           patients={patients}
           selectedPatientId={selectedPatientId}
           onSelectPatient={onSelectPatient}
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          onPageChange={onPageChange}
+          searchQuery={searchQuery}
+          onSearchChange={onSearchChange}
+          selectedCategory={selectedCategory}
+          onCategoryChange={onCategoryChange}
+          filterDate={filterDate}
+          onDateChange={onDateChange}
+          onClearFilters={onClearFilters}
         />
         <main className="flex-1 overflow-hidden">
           {selectedPatient ? (
