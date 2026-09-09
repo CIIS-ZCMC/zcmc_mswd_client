@@ -74,4 +74,5 @@ export interface PatientRecord {
   intakeSheets?: unknown[]
   documents: DocumentItem[]
   history: AuditHistory[]
+  latestCaseId?: number
 }

@@ -17,11 +17,10 @@ import {
   UserCheck,
   Users,
 } from "lucide-react"
-import { useAddFamilyMember, useAddWatcher } from "../hooks/use-patient-writes"
+import { useAddFamilyMember } from "../hooks/use-patient-writes"
 import { useIntakeSheetsForPatient } from "../hooks/use-intake-sheets"
 import type { FamilyMember, PatientRecord } from "../types"
 import { FamilyMemberDialog } from "./dialogs/family-member-dialog"
-import { WatcherDialog } from "./dialogs/watcher-dialog"
 import { DocumentsTab } from "./tabs/documents-tab"
 import { FamilyTab } from "./tabs/family-tab"
 import { HistoryTab } from "./tabs/history-tab"
@@ -40,16 +39,10 @@ interface PatientDetailViewProps {
 export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient }) => {
   const [activeTab, setActiveTab] = useState("profile")
   const [isAddFamilyOpen, setIsAddFamilyOpen] = useState(false)
-  const [isAddWatcherOpen, setIsAddWatcherOpen] = useState(false)
 
   const addFamilyMember = useAddFamilyMember(patient.id)
-  const addWatcher = useAddWatcher(patient.id)
   const { data: intakeSheets = [] } = useIntakeSheetsForPatient(patient.id)
 
-  // Both hit the real API and invalidate the patient's profile query on
-  // success (see use-patient-writes.ts) — no more client-synthesized ids or
-  // audit entries; the server's own Auditable trail is what the History tab
-  // reads now.
   const handleAddFamilyMember = (newFamily: Omit<FamilyMember, "id">) => {
     addFamilyMember.mutate({
       name: newFamily.fullName,
@@ -62,18 +55,6 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
       educational_attainment: newFamily.educationalAttainment || undefined,
       contact_number: newFamily.contactNumber || undefined,
       is_living_with_patient: newFamily.isLivingWithPatient,
-    })
-  }
-
-  const handleAddWatcher = (watcherData: {
-    fullName: string
-    relationship: string
-    contactNo: string
-  }) => {
-    addWatcher.mutate({
-      name: watcherData.fullName,
-      relationship: watcherData.relationship,
-      contact_number: watcherData.contactNo || patient.contactNo,
     })
   }
 
@@ -251,10 +232,7 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
           </TabsContent>
 
           <TabsContent value="watchers">
-            <WatchersTab
-              patient={patient}
-              onOpenAddWatcherDialog={() => setIsAddWatcherOpen(true)}
-            />
+            <WatchersTab patient={patient} caseId={patient.latestCaseId} />
           </TabsContent>
 
           <TabsContent value="staff">
@@ -283,13 +261,6 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
         isOpen={isAddFamilyOpen}
         onClose={() => setIsAddFamilyOpen(false)}
         onAddFamilyMember={handleAddFamilyMember}
-      />
-
-      <WatcherDialog
-        isOpen={isAddWatcherOpen}
-        onClose={() => setIsAddWatcherOpen(false)}
-        defaultContactNo={patient.contactNo}
-        onIssueWatcherPass={handleAddWatcher}
       />
     </div>
   )
