@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useAuth } from "@/features/auth/hooks/use-auth"
+import { useWatcherStatus } from "@/features/cases/hooks/use-case-watchers"
 import {
   CheckCircle2,
   ClipboardList,
@@ -66,6 +68,9 @@ export const IntakeSheetTab: React.FC<IntakeSheetTabProps> = ({ patient }) => {
   const [isWizardOpen, setIsWizardOpen] = useState(false)
 
   const { data: sheets = [], isLoading } = useIntakeSheetsForPatient(patient.id)
+  const { data: watcherStatus } = useWatcherStatus(patient.latestCaseId)
+  const isWatcherBlocking = Boolean(watcherStatus?.blocking)
+
   const submitMutation = useSubmitIntakeSheet(patient.id)
   const finalizeMutation = useFinalizeIntakeSheet(patient.id)
   const cancelMutation = useCancelIntakeSheet(patient.id)
@@ -217,25 +222,25 @@ export const IntakeSheetTab: React.FC<IntakeSheetTabProps> = ({ patient }) => {
               ) : (
                 filteredSheets.map((sheet) => (
                   <TableRow key={sheet.id} className="hover:bg-muted/20">
-                    <TableCell className="font-mono font-bold text-primary">{sheet.intake_no}</TableCell>
-                    <TableCell className="font-medium text-foreground">
+                    <TableCell className="font-mono font-bold text-primary text-base">{sheet.intake_no}</TableCell>
+                    <TableCell className="font-medium text-foreground text-sm md:text-base">
                       {sheet.date_of_intake ? sheet.date_of_intake.slice(0, 10) : "—"}
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground font-medium">
+                    <TableCell className="text-sm text-muted-foreground font-medium">
                       {sheet.referral_source || "—"}
                     </TableCell>
-                    <TableCell className="text-xs font-medium">{workerLabel(sheet)}</TableCell>
+                    <TableCell className="text-sm font-medium">{workerLabel(sheet)}</TableCell>
                     <TableCell>
-                      <Badge variant={statusBadgeVariant(sheet.status)} className="text-xs px-2.5 py-0.5 gap-1">
-                        <CheckCircle2 className="size-3" /> {STATUS_LABEL[sheet.status]}
+                      <Badge variant={statusBadgeVariant(sheet.status)} className="text-sm px-3 py-1 gap-1.5 font-bold">
+                        <CheckCircle2 className="size-3.5" /> {STATUS_LABEL[sheet.status]}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right pr-6">
-                      <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                      <div className="flex items-center justify-end gap-2 flex-wrap">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-8 px-2.5 text-xs gap-1 font-semibold"
+                          className="h-9 px-3 text-sm gap-1.5 font-bold cursor-pointer"
                           onClick={() => setViewingId(sheet.id)}
                         >
                           View
@@ -245,52 +250,96 @@ export const IntakeSheetTab: React.FC<IntakeSheetTabProps> = ({ patient }) => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 px-2.5 text-xs gap-1 font-semibold"
+                            className="h-9 px-3 text-sm gap-1.5 font-bold cursor-pointer"
                             onClick={() => {
                               setEditingSheet(sheet)
                               setIsWizardOpen(true)
                             }}
                           >
-                            <Edit className="size-3.5" /> Edit
+                            <Edit className="size-4 text-primary" /> Edit
                           </Button>
                         )}
 
                         {sheet.status === "draft" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-2.5 text-xs gap-1 font-semibold text-primary"
-                            disabled={submitMutation.isPending}
-                            onClick={() => submitMutation.mutate(sheet.id)}
-                          >
-                            <Send className="size-3.5" /> Submit
-                          </Button>
+                          isWatcherBlocking ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-9 px-3 text-sm gap-1.5 font-bold text-muted-foreground opacity-60 cursor-not-allowed"
+                                      disabled
+                                    >
+                                      <Send className="size-4" /> Submit
+                                    </Button>
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Intake action is blocked until a primary watcher is added or a waiver is filed.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-9 px-3 text-sm gap-1.5 font-bold text-primary cursor-pointer"
+                              disabled={submitMutation.isPending}
+                              onClick={() => submitMutation.mutate(sheet.id)}
+                            >
+                              <Send className="size-4" /> Submit
+                            </Button>
+                          )
                         )}
 
                         {sheet.status === "submitted" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-2.5 text-xs gap-1 font-semibold text-emerald-600"
-                            disabled={finalizeMutation.isPending}
-                            onClick={() => {
-                              if (window.confirm(`Finalize intake ${sheet.intake_no}? This cannot be undone.`)) {
-                                finalizeMutation.mutate(sheet.id)
-                              }
-                            }}
-                          >
-                            <FileCheck2 className="size-3.5" /> Finalize
-                          </Button>
+                          isWatcherBlocking ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-9 px-3 text-sm gap-1.5 font-bold text-muted-foreground opacity-60 cursor-not-allowed"
+                                      disabled
+                                    >
+                                      <FileCheck2 className="size-4" /> Finalize
+                                    </Button>
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Intake action is blocked until a primary watcher is added or a waiver is filed.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-9 px-3 text-sm gap-1.5 font-bold text-emerald-600 cursor-pointer"
+                              disabled={finalizeMutation.isPending}
+                              onClick={() => {
+                                if (window.confirm(`Finalize intake ${sheet.intake_no}? This cannot be undone.`)) {
+                                  finalizeMutation.mutate(sheet.id)
+                                }
+                              }}
+                            >
+                              <FileCheck2 className="size-4" /> Finalize
+                            </Button>
+                          )
                         )}
 
                         {sheet.status === "finalized" && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 px-2.5 text-xs gap-1 font-semibold"
+                            className="h-9 px-3 text-sm gap-1.5 font-bold cursor-pointer"
                             onClick={() => downloadIntakeSheetPdf(sheet.id, `${sheet.intake_no}.pdf`)}
                           >
-                            <Download className="size-3.5" /> PDF
+                            <Download className="size-4" /> PDF
                           </Button>
                         )}
 
@@ -298,7 +347,7 @@ export const IntakeSheetTab: React.FC<IntakeSheetTabProps> = ({ patient }) => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 px-2.5 text-xs gap-1 font-semibold text-destructive"
+                            className="h-9 px-3 text-sm gap-1.5 font-bold text-destructive hover:bg-destructive/10 cursor-pointer"
                             disabled={cancelMutation.isPending}
                             onClick={() => {
                               if (window.confirm(`Cancel intake ${sheet.intake_no}?`)) {
@@ -306,7 +355,7 @@ export const IntakeSheetTab: React.FC<IntakeSheetTabProps> = ({ patient }) => {
                               }
                             }}
                           >
-                            <X className="size-3.5" /> Cancel
+                            <X className="size-4" /> Cancel
                           </Button>
                         )}
                       </div>
