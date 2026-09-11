@@ -173,7 +173,8 @@ function toFieldChanges(changes: ApiActivity["changes"]): AuditFieldChange[] {
 }
 
 function toAuditEvent(raw: string | null): AuditEvent {
-  return raw === "created" || raw === "deleted" ? raw : "updated"
+  if (raw === "created" || raw === "deleted" || raw === "restored") return raw
+  return "updated"
 }
 
 /**

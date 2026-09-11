@@ -16,8 +16,8 @@ export interface AuditFieldChange {
   to: unknown
 }
 
-/** The three events the server records. Reads are not logged (by design). */
-export type AuditEvent = "created" | "updated" | "deleted"
+/** The events the server records (created, updated, deleted, restored). Reads are not logged. */
+export type AuditEvent = "created" | "updated" | "deleted" | "restored"
 
 export interface AuditHistory {
   id: string

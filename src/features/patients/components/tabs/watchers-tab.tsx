@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { RecordHistoryPopover } from "@/features/audit/components/record-history-popover"
 import { Plus } from "lucide-react"
 import type { PatientRecord } from "../../types"
 
@@ -51,7 +52,10 @@ export const WatchersTab: React.FC<WatchersTabProps> = ({
             {patient.watchers.map((watch) => (
               <TableRow key={watch.id}>
                 <TableCell className="font-bold text-foreground">
-                  {watch.fullName}
+                  <div className="flex items-center gap-2">
+                    <span>{watch.fullName}</span>
+                    <RecordHistoryPopover subjectType="PatientWatcher" subjectId={watch.id} label={`Watcher: ${watch.fullName}`} />
+                  </div>
                 </TableCell>
                 <TableCell>{watch.relationship}</TableCell>
                 <TableCell className="font-mono font-semibold">

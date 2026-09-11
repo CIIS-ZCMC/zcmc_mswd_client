@@ -11,11 +11,11 @@ import type { ApiActivityLogPage } from "@/features/patients/types/api.types"
 export interface ActivityLogFilters {
   page?: number
   perPage?: number
-  /** Causer. */
+  /** Causer user ID. */
   userId?: number
   patientId?: number
   caseId?: number
-  event?: "created" | "updated" | "deleted"
+  event?: "created" | "updated" | "deleted" | "restored"
   subjectType?: string
   subjectId?: number
   /** Inclusive `YYYY-MM-DD` bounds. */
@@ -35,9 +35,7 @@ export function getActivityLog(filters: ActivityLogFilters = {}) {
     params: {
       page: filters.page ?? 1,
       per_page: filters.perPage ?? 25,
-    },
-    filters: {
-      causer_id: filters.userId,
+      user_id: filters.userId,
       patient_id: filters.patientId,
       case_id: filters.caseId,
       event: filters.event,

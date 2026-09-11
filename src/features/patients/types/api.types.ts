@@ -98,18 +98,21 @@ export interface ApiCaretaker {
 }
 
 /**
- * GET /patients/{id}/caretake — custody in one payload: the standing
- * assignments plus the episode handler they must be distinguished from.
- * Separate from the profile's `caretakers` array, which carries no handler
- * context.
+ * GET /patients/{id}/caretake — custody and its recent trail in one payload.
+ *
+ * The active/history split is made server-side on purpose: "who is responsible
+ * now" and "who has been" are two different questions, and the client is not
+ * meant to re-derive the split from `is_active`.
+ *
+ * No episode handler here — that is case data, and reaches the UI through
+ * `assignedStaff` instead.
  */
 export interface ApiCaretakeSummary {
-  caretakers: ApiCaretaker[]
-  episode_handler?: {
-    user: ApiUserLite | null
-    case_code: string | null
-    date_opened: string | null
-  } | null
+  caretakers: {
+    active: ApiCaretaker[]
+    history: ApiCaretaker[]
+  }
+  recent_activity?: ApiActivity[]
 }
 
 export interface ApiDocument {

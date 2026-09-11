@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
+import { usePermission } from "@/features/auth/hooks/use-permission"
 import {
   Search,
   Calendar,
@@ -13,6 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  History,
+  Users,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -20,6 +23,8 @@ interface SidebarProps {
   patients: PatientRecord[]
   selectedPatientId: string
   onSelectPatient: (patientId: string) => void
+  currentView?: "patients" | "audit-log"
+  onViewChange?: (view: "patients" | "audit-log") => void
   page: number
   totalPages: number
   total: number
@@ -37,6 +42,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   patients,
   selectedPatientId,
   onSelectPatient,
+  currentView = "patients",
+  onViewChange,
   page,
   totalPages,
   total,
@@ -49,6 +56,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onDateChange,
   onClearFilters,
 }) => {
+  const canViewAudit = usePermission("audit.view")
+
   const getCategoryBadgeVariant = (category: string) => {
     switch (category) {
       case "Indigent":
@@ -64,6 +73,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className="flex h-full w-88 flex-col border-r border-border bg-card/60 text-foreground transition-colors duration-200">
+      {/* View Selector Nav (Patients vs Global Audit Log) */}
+      <div className="p-3 border-b border-border/80 bg-muted/30 flex items-center gap-2">
+        <button
+          onClick={() => onViewChange?.("patients")}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border",
+            currentView === "patients"
+              ? "bg-primary text-primary-foreground border-primary shadow-xs"
+              : "bg-background text-muted-foreground border-border hover:bg-muted"
+          )}
+        >
+          <Users className="size-4" /> Patients
+        </button>
+
+        {canViewAudit && (
+          <button
+            onClick={() => onViewChange?.("audit-log")}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border",
+              currentView === "audit-log"
+                ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                : "bg-background text-muted-foreground border-border hover:bg-muted"
+            )}
+          >
+            <History className="size-4" /> Audit Log
+          </button>
+        )}
+      </div>
+
       {/* Sidebar Header */}
       <div className="flex flex-col gap-3.5 border-b border-border p-4">
         <div className="flex items-center justify-between">
