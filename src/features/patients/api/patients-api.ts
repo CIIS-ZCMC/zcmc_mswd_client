@@ -86,6 +86,31 @@ export function createFamilyMember(patientId: number, payload: CreateFamilyMembe
     .then((res) => res.data)
 }
 
+export interface UpdateFamilyMemberPayload {
+  name?: string
+  relationship?: string
+  birthdate?: string
+  sex?: string
+  age?: number
+  occupation?: string
+  monthly_income?: number
+  educational_attainment?: string
+  contact_number?: string
+  is_living_with_patient?: boolean
+}
+
+/** PUT /family-members/{id} */
+export function updateFamilyMember(memberId: string | number, payload: UpdateFamilyMemberPayload) {
+  return apiClient
+    .put<ApiEnvelope<ApiFamilyMember>>(`/family-members/${memberId}`, payload)
+    .then((res) => res.data)
+}
+
+/** DELETE /family-members/{id} */
+export function deleteFamilyMember(memberId: string | number) {
+  return apiClient.delete<void>(`/family-members/${memberId}`)
+}
+
 export interface UpdatePatientBackgroundPayload {
   contact_number?: string
   address?: string
@@ -100,6 +125,7 @@ export interface UpdatePatientBackgroundPayload {
   occupation?: string
   employer?: string
   monthly_income?: number
+  civil_status?: string
 }
 
 /** PUT /patients/{id} — used here for just the background/economic fields; the patient stays the source of truth, editable independent of any one intake. */

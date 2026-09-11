@@ -17,7 +17,12 @@ import {
   UserCheck,
   Users,
 } from "lucide-react"
-import { useAddFamilyMember, useAddWatcher } from "../hooks/use-patient-writes"
+import {
+  useAddFamilyMember,
+  useAddWatcher,
+  useDeleteFamilyMember,
+  useUpdateFamilyMember,
+} from "../hooks/use-patient-writes"
 import { useIntakeSheetsForPatient } from "../hooks/use-intake-sheets"
 import type { FamilyMember, PatientRecord } from "../types"
 import { FamilyMemberDialog } from "./dialogs/family-member-dialog"
@@ -40,9 +45,12 @@ interface PatientDetailViewProps {
 export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient }) => {
   const [activeTab, setActiveTab] = useState("profile")
   const [isAddFamilyOpen, setIsAddFamilyOpen] = useState(false)
+  const [editingFamilyMember, setEditingFamilyMember] = useState<FamilyMember | null>(null)
   const [isAddWatcherOpen, setIsAddWatcherOpen] = useState(false)
 
   const addFamilyMember = useAddFamilyMember(patient.id)
+  const updateFamilyMember = useUpdateFamilyMember(patient.id)
+  const deleteFamilyMember = useDeleteFamilyMember(patient.id)
   const addWatcher = useAddWatcher(patient.id)
   const { data: intakeSheets = [] } = useIntakeSheetsForPatient(patient.id)
 
@@ -63,6 +71,28 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
       contact_number: newFamily.contactNumber || undefined,
       is_living_with_patient: newFamily.isLivingWithPatient,
     })
+  }
+
+  const handleUpdateFamilyMember = (memberId: string, updatedFamily: Omit<FamilyMember, "id">) => {
+    updateFamilyMember.mutate({
+      memberId,
+      payload: {
+        name: updatedFamily.fullName,
+        relationship: updatedFamily.relationship,
+        birthdate: updatedFamily.birthdate || undefined,
+        sex: updatedFamily.sex || undefined,
+        age: updatedFamily.age,
+        occupation: updatedFamily.occupation,
+        monthly_income: updatedFamily.monthlyIncome,
+        educational_attainment: updatedFamily.educationalAttainment || undefined,
+        contact_number: updatedFamily.contactNumber || undefined,
+        is_living_with_patient: updatedFamily.isLivingWithPatient,
+      },
+    })
+  }
+
+  const handleDeleteFamilyMember = (memberId: string) => {
+    deleteFamilyMember.mutate(memberId)
   }
 
   const handleAddWatcher = (watcherData: {
@@ -247,6 +277,8 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
             <FamilyTab
               patient={patient}
               onOpenAddFamilyDialog={() => setIsAddFamilyOpen(true)}
+              onOpenEditFamilyDialog={(member) => setEditingFamilyMember(member)}
+              onDeleteFamilyMember={handleDeleteFamilyMember}
             />
           </TabsContent>
 
@@ -280,9 +312,14 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
       </div>
 
       <FamilyMemberDialog
-        isOpen={isAddFamilyOpen}
-        onClose={() => setIsAddFamilyOpen(false)}
+        isOpen={isAddFamilyOpen || editingFamilyMember !== null}
+        initialMember={editingFamilyMember}
+        onClose={() => {
+          setIsAddFamilyOpen(false)
+          setEditingFamilyMember(null)
+        }}
         onAddFamilyMember={handleAddFamilyMember}
+        onUpdateFamilyMember={handleUpdateFamilyMember}
       />
 
       <WatcherDialog
