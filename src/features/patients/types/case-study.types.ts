@@ -23,13 +23,24 @@ export interface FamilyMember {
   isLivingWithPatient: boolean
 }
 
+/**
+ * The handler of the patient's most recent *episode* — `cases.assigned_user`
+ * and `cases.date_opened`, nothing more. Standing custody is a separate
+ * concern; see `CaretakerAssignment` in caretake.types.ts.
+ *
+ * `socialWorkerId` (no RSW licence column exists), `caseOfficer` (no such
+ * role exists apart from the assigned user) and `shift` (invented outright,
+ * always "Morning") were dropped — none had a backing field.
+ */
 export interface StaffAssignment {
   socialWorker: string
-  socialWorkerId: string
-  caseOfficer: string
+  /**
+   * Clinical data, outside this system's module boundary. Kept as an
+   * explicit "not tracked" note rather than silently omitted, so the UI can
+   * say why the field is blank instead of implying it is unassigned.
+   */
   attendingPhysician: string
   assignedDate: string
-  shift: "Morning" | "Afternoon" | "Night"
 }
 
 export interface SocialCaseStudy {

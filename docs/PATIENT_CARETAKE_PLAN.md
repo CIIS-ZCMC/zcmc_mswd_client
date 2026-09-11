@@ -12,7 +12,7 @@ phase here is gated on a server phase — see the table.
 
 | Phase | Gate | Status |
 |-------|------|--------|
-| 6. Types, API and adapter | server 4 | ☐ |
+| 6. Types, API and adapter | server 4 | ☑ |
 | 7. Caretake tab (custody) | server 3 + phase 6 | ☐ |
 | 8. History tab (accountability) | server 2 + phase 6 | ☐ |
 | 9. Global audit log + inline history | server 4 + phase 6 | ☐ |
@@ -54,9 +54,14 @@ who last changed it.
 
 ---
 
-## Phase 6 — Types, API and adapter ☐
+## Phase 6 — Types, API and adapter ☑
 
-**Gate:** server Phase 4 deployed.
+**Gate:** server Phase 4 deployed. **Landed ahead of that gate** — the
+type/adapter half is real today (`raw.caretakers` and `changes` were already
+on the wire and merely discarded), while the four new endpoints
+(`GET /patients/{id}/caretake`, the reassign route, `GET /activity-log`) 404
+until the server catches up. Nothing calls them yet, so nothing regresses;
+Phase 7 is what actually needs the server.
 
 Foundation for 7–9. No visual change; the two tabs keep rendering what they
 render today until their own phases land.

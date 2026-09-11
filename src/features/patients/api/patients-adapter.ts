@@ -18,12 +18,15 @@
  */
 import type { FamilyMember, MedicalCategory, StaffAssignment } from "../types/case-study.types"
 import type { DocumentItem } from "../types/document.types"
-import type { AuditHistory } from "../types/audit.types"
+import type { AuditEvent, AuditFieldChange, AuditHistory } from "../types/audit.types"
+import type { CaretakerAssignment, CaretakerRole } from "../types/caretake.types"
+import { CARETAKER_ROLES } from "../types/caretake.types"
 import type { PatientIdCredential, PatientRecord } from "../types/patient.types"
 import type { Watcher } from "../types/watcher.types"
 import type {
   ApiActivity,
   ApiAssessment,
+  ApiCaretaker,
   ApiCase,
   ApiDocument,
   ApiFamilyMember,
@@ -144,28 +147,103 @@ function toDocumentItem(raw: ApiDocument): DocumentItem {
   }
 }
 
+/** `monthly_income` → "Monthly income". No server-side label map exists yet. */
+function fieldLabel(field: string): string {
+  return field.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase())
+}
+
+/**
+ * Flattens spatie's `{ attributes, old }` into one row per changed field.
+ * Keys are taken from both sides unioned, so a create (no `old`) and a
+ * delete (no `attributes`) both still produce rows, with the missing side
+ * left `undefined` for the renderer to interpret.
+ */
+function toFieldChanges(changes: ApiActivity["changes"]): AuditFieldChange[] {
+  if (!changes) return []
+  const next = changes.attributes ?? {}
+  const previous = changes.old ?? {}
+  const fields = new Set([...Object.keys(next), ...Object.keys(previous)])
+
+  return [...fields].map((field) => ({
+    field,
+    label: fieldLabel(field),
+    from: previous[field],
+    to: next[field],
+  }))
+}
+
+function toAuditEvent(raw: string | null): AuditEvent {
+  return raw === "created" || raw === "deleted" ? raw : "updated"
+}
+
+/**
+ * `subject_label` is the server's identifying string for the record
+ * ("Watcher: Maria Cruz"); without it, two "Updated" rows on different
+ * record types are indistinguishable, so the subject type is the fallback
+ * rather than the event alone.
+ */
+function buildActionLabel(subjectLabel: string, event: AuditEvent): string {
+  return `${subjectLabel} ${event}`
+}
+
 function toAuditHistory(raw: ApiActivity): AuditHistory {
+  const event = toAuditEvent(raw.event)
+  const subjectLabel = raw.subject_label || raw.subject_type
+
   return {
     id: String(raw.id),
     timestamp: raw.created_at,
-    action: raw.event ? raw.event.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : raw.subject_type,
+    event,
+    action: buildActionLabel(subjectLabel, event),
     performedBy: raw.causer?.name ?? "System",
+    subjectType: raw.subject_type,
+    subjectId: String(raw.subject_id),
+    subjectLabel,
+    patientId: raw.patient_id != null ? String(raw.patient_id) : undefined,
+    caseId: raw.case_id != null ? String(raw.case_id) : undefined,
     details: raw.description,
+    changes: toFieldChanges(raw.changes),
   }
 }
 
+/** `role` is an unvalidated string column server-side; fold the unknown into "others". */
+function toCaretakerRole(raw: string): CaretakerRole {
+  return (CARETAKER_ROLES as readonly string[]).includes(raw) ? (raw as CaretakerRole) : "others"
+}
+
+export function toCaretakerAssignment(raw: ApiCaretaker): CaretakerAssignment {
+  return {
+    id: String(raw.id),
+    // `user` is only eager-loaded once the server's Phase 3 lands; until
+    // then the id is all there is, and showing it beats inventing a name.
+    user: {
+      id: String(raw.user?.id ?? raw.user_id),
+      name: raw.user?.name ?? `User #${raw.user_id}`,
+    },
+    role: toCaretakerRole(raw.role),
+    assignedDate: raw.assigned_date,
+    assignedBy: raw.assigned_by?.name ?? "",
+    reason: raw.reason ?? "",
+    unassignedDate: raw.unassigned_date ?? undefined,
+    unassignedBy: raw.unassigned_by?.name ?? undefined,
+    unassignedReason: raw.unassigned_reason ?? undefined,
+    replacedById: raw.replaced_by_id != null ? String(raw.replaced_by_id) : undefined,
+    isActive: raw.is_active,
+  }
+}
+
+/**
+ * The handler of the latest *episode*, which is genuinely
+ * `cases.assigned_user` — custody is a separate, patient-level concern and
+ * now lives on `PatientRecord.caretakers`.
+ */
 function buildAssignedStaff(latestCase: ApiCase | null | undefined): StaffAssignment {
   return {
     socialWorker: latestCase?.assigned_user?.name ?? "Unassigned",
-    // No RSW license field exists on the User model.
-    socialWorkerId: NOT_ON_FILE,
-    // No case-officer role exists separately from the assigned social worker.
-    caseOfficer: NOT_ON_FILE,
     // Attending physician is clinical data — out of scope for this system
     // per the project's own module boundaries; never sourced from MSS data.
     attendingPhysician: "Not tracked (outside MSS system scope)",
     assignedDate: latestCase?.date_opened ?? "",
-    shift: "Morning",
   }
 }
 
@@ -223,6 +301,8 @@ export function toPatientListRecord(raw: ApiPatient): PatientRecord {
     monthlyIncome: raw.monthly_income != null ? Number(raw.monthly_income) : undefined,
     familyMembers: (raw.family_members ?? []).map(toFamilyMember),
     watchers: (raw.watchers ?? []).map(toWatcher),
+    // Eager-loaded by PatientService::profile(); absent on list rows.
+    caretakers: (raw.caretakers ?? []).map(toCaretakerAssignment),
     assignedStaff: buildAssignedStaff(latestCase),
     caseStudy: {
       caseNumber: latestCase?.case_code ?? "No active case",
