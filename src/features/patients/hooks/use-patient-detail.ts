@@ -17,6 +17,8 @@ export function patientDetailKeys(patientId: number) {
     latestCase: ["patients", "detail", patientId, "latest-case"] as const,
     assessments: (caseId: number) => ["cases", caseId, "assessments"] as const,
     history: ["patients", "detail", patientId, "history"] as const,
+    /** Custody. No query reads it yet — the Caretake tab is the next phase. */
+    caretake: ["patients", "detail", patientId, "caretake"] as const,
   }
 }
 

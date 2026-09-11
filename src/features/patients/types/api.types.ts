@@ -82,8 +82,34 @@ export interface ApiCaretaker {
   assigned_date: string
   unassigned_date: string | null
   is_active: boolean
+  /**
+   * Custody-hardening fields. All optional: they arrive only once the
+   * server's Phase 3 ships, and `PatientResource` keeps emitting the
+   * original column set until then.
+   */
+  user?: ApiUserLite | null
+  assigned_by?: ApiUserLite | null
+  reason?: string | null
+  unassigned_by?: ApiUserLite | null
+  unassigned_reason?: string | null
+  replaced_by_id?: number | null
   created_at?: string
   updated_at?: string
+}
+
+/**
+ * GET /patients/{id}/caretake — custody in one payload: the standing
+ * assignments plus the episode handler they must be distinguished from.
+ * Separate from the profile's `caretakers` array, which carries no handler
+ * context.
+ */
+export interface ApiCaretakeSummary {
+  caretakers: ApiCaretaker[]
+  episode_handler?: {
+    user: ApiUserLite | null
+    case_code: string | null
+    date_opened: string | null
+  } | null
 }
 
 export interface ApiDocument {
@@ -154,6 +180,16 @@ export interface ApiAssessment {
   updated_at: string
 }
 
+/**
+ * `changes` is spatie's `properties` verbatim (see `ActivityResource`):
+ * `attributes` holds the new values, `old` the previous ones. `old` is
+ * absent on a create and `attributes` on a delete.
+ */
+export interface ApiActivityChanges {
+  attributes?: Record<string, unknown>
+  old?: Record<string, unknown>
+}
+
 export interface ApiActivity {
   id: number
   log_name: string | null
@@ -161,10 +197,18 @@ export interface ApiActivity {
   description: string
   subject_type: string
   subject_id: number
+  /** Identifying label for the subject, e.g. "Watcher: Maria Cruz". Server Phase 4. */
+  subject_label?: string | null
+  /** Ownership columns stamped at write time. Server Phase 2. */
+  patient_id?: number | null
+  case_id?: number | null
   causer?: { id: number; name: string | null } | null
-  changes: Record<string, unknown> | null
+  changes: ApiActivityChanges | null
   created_at: string
 }
+
+/** GET /activity-log — the paginated, server-filtered global trail (server Phase 4). */
+export type ApiActivityLogPage = ApiPaginated<ApiActivity>
 
 export interface ApiPatient {
   id: number

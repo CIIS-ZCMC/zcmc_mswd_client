@@ -33,8 +33,11 @@ export const StaffTab: React.FC<StaffTabProps> = ({ patient }) => {
           <p className="text-base font-bold text-foreground">
             {patient.assignedStaff.socialWorker}
           </p>
-          <p className="font-mono text-muted-foreground text-xs font-semibold">
-            License: {patient.assignedStaff.socialWorkerId}
+          <p className="text-muted-foreground text-xs font-semibold">
+            Handler of the latest episode
+            {patient.assignedStaff.assignedDate
+              ? ` — opened ${patient.assignedStaff.assignedDate}`
+              : ""}
           </p>
         </div>
 
@@ -47,9 +50,6 @@ export const StaffTab: React.FC<StaffTabProps> = ({ patient }) => {
           </div>
           <p className="text-base font-bold text-foreground">
             {patient.assignedStaff.attendingPhysician}
-          </p>
-          <p className="text-xs text-muted-foreground font-medium">
-            Case Officer: {patient.assignedStaff.caseOfficer}
           </p>
         </div>
       </CardContent>
