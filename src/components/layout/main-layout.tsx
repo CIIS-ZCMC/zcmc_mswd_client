@@ -1,8 +1,9 @@
-import React from "react"
+import React, { useState } from "react"
 import { Header } from "./header"
 import { Sidebar } from "./sidebar"
 import { ShieldCheck } from "lucide-react"
 import { PatientDetailView } from "@/features/patients/components/patient-detail-view"
+import { AuditLogPage } from "@/features/audit/components/audit-log-page"
 import type { PatientRecord } from "@/features/patients/types"
 
 interface MainLayoutProps {
@@ -42,6 +43,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   onDateChange,
   onClearFilters,
 }) => {
+  const [currentView, setCurrentView] = useState<"patients" | "audit-log">("patients")
+
   return (
     <div className="flex h-screen flex-col bg-background text-foreground transition-colors duration-200 overflow-hidden font-sans">
       <Header />
@@ -49,7 +52,12 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         <Sidebar
           patients={patients}
           selectedPatientId={selectedPatientId}
-          onSelectPatient={onSelectPatient}
+          onSelectPatient={(id) => {
+            onSelectPatient(id)
+            setCurrentView("patients")
+          }}
+          currentView={currentView}
+          onViewChange={setCurrentView}
           page={page}
           totalPages={totalPages}
           total={total}
@@ -63,7 +71,14 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           onClearFilters={onClearFilters}
         />
         <main className="flex-1 overflow-hidden">
-          {selectedPatient ? (
+          {currentView === "audit-log" ? (
+            <AuditLogPage
+              onSelectPatient={(id) => {
+                onSelectPatient(id)
+                setCurrentView("patients")
+              }}
+            />
+          ) : selectedPatient ? (
             <PatientDetailView
               patient={selectedPatient}
               onUpdatePatient={onUpdatePatient}

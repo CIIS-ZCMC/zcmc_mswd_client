@@ -9,6 +9,7 @@ import {
   getIntakeSheetHistory,
   listAssistantTypes,
   listIntakeSheetsForPatient,
+  listWatcherRelationshipTypes,
   submitIntakeSheet,
   updateIntakeSheet,
   type CreateDiagnosticPayload,
@@ -33,6 +34,15 @@ export function useAssistantTypes(activeOnly = true) {
     staleTime: 5 * 60_000,
   })
 }
+
+export function useWatcherRelationshipTypes() {
+  return useQuery({
+    queryKey: ["watcher-relationship-types"],
+    queryFn: listWatcherRelationshipTypes,
+    staleTime: 5 * 60_000,
+  })
+}
+
 
 /**
  * Reuses use-patient-detail's own query key for the patient's latest case,

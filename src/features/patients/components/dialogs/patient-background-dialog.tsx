@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -10,9 +10,31 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import type { UpdatePatientBackgroundPayload } from "../../api/patients-api"
 import type { PatientRecord } from "../../types"
+
+const EDUCATIONAL_ATTAINMENT_OPTIONS = [
+  "No Formal Education",
+  "Elementary Level",
+  "Elementary Graduate",
+  "High School Level",
+  "High School Graduate",
+  "Vocational / Technical",
+  "College Level",
+  "College Graduate",
+  "Post-Graduate",
+]
+
+const CIVIL_STATUS_OPTIONS = [
+  "Single",
+  "Married",
+  "Widowed",
+  "Separated",
+  "Divorced",
+  "Common-Law",
+]
 
 interface PatientBackgroundDialogProps {
   isOpen: boolean
@@ -32,6 +54,7 @@ export const PatientBackgroundDialog: React.FC<PatientBackgroundDialogProps> = (
   const [form, setForm] = useState(() => ({
     religion: patient.religion ?? "",
     nationality: patient.nationality ?? "",
+    civil_status: patient.civilStatus ?? "",
     place_of_birth: patient.placeOfBirth ?? "",
     permanent_address: patient.permanentAddress ?? "",
     present_address: patient.presentAddress ?? "",
@@ -41,10 +64,28 @@ export const PatientBackgroundDialog: React.FC<PatientBackgroundDialogProps> = (
     monthly_income: patient.monthlyIncome != null ? String(patient.monthlyIncome) : "",
   }))
 
+  useEffect(() => {
+    if (isOpen) {
+      setForm({
+        religion: patient.religion ?? "",
+        nationality: patient.nationality ?? "",
+        civil_status: patient.civilStatus ?? "",
+        place_of_birth: patient.placeOfBirth ?? "",
+        permanent_address: patient.permanentAddress ?? "",
+        present_address: patient.presentAddress ?? "",
+        educational_attainment: patient.educationalAttainment ?? "",
+        occupation: patient.occupation ?? "",
+        employer: patient.employer ?? "",
+        monthly_income: patient.monthlyIncome != null ? String(patient.monthlyIncome) : "",
+      })
+    }
+  }, [isOpen, patient])
+
   const handleSave = () => {
     onSave({
       religion: form.religion || undefined,
       nationality: form.nationality || undefined,
+      civil_status: form.civil_status || undefined,
       place_of_birth: form.place_of_birth || undefined,
       permanent_address: form.permanent_address || undefined,
       present_address: form.present_address || undefined,
@@ -57,7 +98,7 @@ export const PatientBackgroundDialog: React.FC<PatientBackgroundDialogProps> = (
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-fit max-w-xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-3xl p-7 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Edit Background &amp; Economic Profile</DialogTitle>
           <DialogDescription className="text-sm">
@@ -90,7 +131,7 @@ export const PatientBackgroundDialog: React.FC<PatientBackgroundDialogProps> = (
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label className="text-sm font-bold">Place of Birth</Label>
                 <Input
@@ -101,13 +142,40 @@ export const PatientBackgroundDialog: React.FC<PatientBackgroundDialogProps> = (
                 />
               </div>
               <div>
+                <Label className="text-sm font-bold">Civil Status</Label>
+                <Select
+                  value={form.civil_status}
+                  onValueChange={(val) => setForm({ ...form, civil_status: val ?? "" })}
+                >
+                  <SelectTrigger className="w-full h-11 text-base mt-1">
+                    <SelectValue placeholder="Select Civil Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CIVIL_STATUS_OPTIONS.map((status) => (
+                      <SelectItem key={status} value={status} className="text-base py-2 font-medium">
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label className="text-sm font-bold">Educational Attainment</Label>
-                <Input
+                <Select
                   value={form.educational_attainment}
-                  onChange={(e) => setForm({ ...form, educational_attainment: e.target.value })}
-                  className="h-11 text-base mt-1"
-                  placeholder="Highest level reached"
-                />
+                  onValueChange={(val) => setForm({ ...form, educational_attainment: val ?? "" })}
+                >
+                  <SelectTrigger className="w-full h-11 text-base mt-1">
+                    <SelectValue placeholder="Select Educational Attainment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EDUCATIONAL_ATTAINMENT_OPTIONS.map((edu) => (
+                      <SelectItem key={edu} value={edu} className="text-base py-2 font-medium">
+                        {edu}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>

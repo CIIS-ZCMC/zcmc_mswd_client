@@ -124,14 +124,13 @@ export const IntakeSheetTab: React.FC<IntakeSheetTabProps> = ({ patient }) => {
         <Button
           variant="default"
           size="default"
-          className="gap-2 font-bold h-10 px-5"
+          className="h-10 px-4 text-sm font-bold gap-2"
           onClick={() => {
             setEditingSheet(null)
             setIsWizardOpen(true)
           }}
         >
-          <Plus className="size-4" />
-          Create New Intake Sheet
+          <Plus className="size-4.5" /> Create New Intake Sheet
         </Button>
       </div>
 

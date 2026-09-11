@@ -17,7 +17,14 @@ import {
   UserCheck,
   Users,
 } from "lucide-react"
-import { useAddFamilyMember } from "../hooks/use-patient-writes"
+// Family CRUD stays patient-scoped. useAddWatcher is deliberately not imported
+// any more: as of Phase 7 watchers hang off the case episode, and WatchersTab
+// owns that write through use-case-watcher-mutations.
+import {
+  useAddFamilyMember,
+  useDeleteFamilyMember,
+  useUpdateFamilyMember,
+} from "../hooks/use-patient-writes"
 import { useIntakeSheetsForPatient } from "../hooks/use-intake-sheets"
 import type { FamilyMember, PatientRecord } from "../types"
 import { FamilyMemberDialog } from "./dialogs/family-member-dialog"
@@ -28,7 +35,7 @@ import { IdTab } from "./tabs/id-tab"
 import { IntakeSheetTab } from "./tabs/intake-sheet-tab"
 import { ProfileTab } from "./tabs/profile-tab"
 import { SocialCaseTab } from "./tabs/social-case-tab"
-import { StaffTab } from "./tabs/staff-tab"
+import { CaretakeTab } from "./tabs/caretake-tab"
 import { WatchersTab } from "./tabs/watchers-tab"
 
 import { WatcherStatusBanner } from "./watcher-status-banner"
@@ -44,12 +51,15 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
   const [activeTab, setActiveTab] = useState("profile")
   const [isAddFamilyOpen, setIsAddFamilyOpen] = useState(false)
   const [isWaiverOpen, setIsWaiverOpen] = useState(false)
+  const [editingFamilyMember, setEditingFamilyMember] = useState<FamilyMember | null>(null)
 
   const watcherMutations = useCaseWatcherMutations({
     caseId: patient.latestCaseId ?? 0,
     patientId: Number(patient.id),
   })
   const addFamilyMember = useAddFamilyMember(patient.id)
+  const updateFamilyMember = useUpdateFamilyMember(patient.id)
+  const deleteFamilyMember = useDeleteFamilyMember(patient.id)
   const { data: intakeSheets = [] } = useIntakeSheetsForPatient(patient.id)
 
   const handleAddFamilyMember = (newFamily: Omit<FamilyMember, "id">) => {
@@ -71,6 +81,28 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
     if (window.confirm("Are you sure you want to revoke the watcher waiver for this admission episode?")) {
       await watcherMutations.destroyWaiver()
     }
+  }
+
+  const handleUpdateFamilyMember = (memberId: string, updatedFamily: Omit<FamilyMember, "id">) => {
+    updateFamilyMember.mutate({
+      memberId,
+      payload: {
+        name: updatedFamily.fullName,
+        relationship: updatedFamily.relationship,
+        birthdate: updatedFamily.birthdate || undefined,
+        sex: updatedFamily.sex || undefined,
+        age: updatedFamily.age,
+        occupation: updatedFamily.occupation,
+        monthly_income: updatedFamily.monthlyIncome,
+        educational_attainment: updatedFamily.educationalAttainment || undefined,
+        contact_number: updatedFamily.contactNumber || undefined,
+        is_living_with_patient: updatedFamily.isLivingWithPatient,
+      },
+    })
+  }
+
+  const handleDeleteFamilyMember = (memberId: string) => {
+    deleteFamilyMember.mutate(memberId)
   }
 
   return (
@@ -189,11 +221,11 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
             </TabsTrigger>
 
             <TabsTrigger
-              value="staff"
+              value="caretake"
               className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
             >
               <UserCheck className="size-5" />
-              <span>Staff</span>
+              <span>Caretake</span>
             </TabsTrigger>
 
             <TabsTrigger
@@ -250,6 +282,8 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
             <FamilyTab
               patient={patient}
               onOpenAddFamilyDialog={() => setIsAddFamilyOpen(true)}
+              onOpenEditFamilyDialog={(member) => setEditingFamilyMember(member)}
+              onDeleteFamilyMember={handleDeleteFamilyMember}
             />
           </TabsContent>
 
@@ -257,8 +291,8 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
             <WatchersTab patient={patient} caseId={patient.latestCaseId} />
           </TabsContent>
 
-          <TabsContent value="staff">
-            <StaffTab patient={patient} />
+          <TabsContent value="caretake">
+            <CaretakeTab patient={patient} />
           </TabsContent>
 
           <TabsContent value="social-case">
@@ -280,9 +314,14 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
       </div>
 
       <FamilyMemberDialog
-        isOpen={isAddFamilyOpen}
-        onClose={() => setIsAddFamilyOpen(false)}
+        isOpen={isAddFamilyOpen || editingFamilyMember !== null}
+        initialMember={editingFamilyMember}
+        onClose={() => {
+          setIsAddFamilyOpen(false)
+          setEditingFamilyMember(null)
+        }}
         onAddFamilyMember={handleAddFamilyMember}
+        onUpdateFamilyMember={handleUpdateFamilyMember}
       />
 
       <WatcherWaiverDialog
