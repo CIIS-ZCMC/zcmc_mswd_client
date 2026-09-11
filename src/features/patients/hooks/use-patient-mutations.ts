@@ -22,12 +22,23 @@ export function usePatientMutations(
         hour12: true,
       })
 
+      // A local, not-yet-persisted entry for the Intake Sheet overlay — the
+      // server's own trail carries the real one once that flow is wired to
+      // an endpoint. No field-level diff is computed here: `updater` is an
+      // opaque whole-record transform, so `changes` stays empty rather than
+      // guessing at what moved.
       const newAudit: AuditHistory = {
         id: `hist-${Date.now()}`,
         timestamp,
+        event: "updated",
         action,
         performedBy,
+        subjectType: "Patient",
+        subjectId: patient.id,
+        subjectLabel: action,
+        patientId: patient.id,
         details,
+        changes: [],
       }
 
       const updated = updater(patient)

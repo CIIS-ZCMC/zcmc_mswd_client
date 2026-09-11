@@ -2,9 +2,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import {
   createFamilyMember,
   createWatcher,
+  deleteFamilyMember,
+  updateFamilyMember,
   updatePatientBackground,
   type CreateFamilyMemberPayload,
   type CreateWatcherPayload,
+  type UpdateFamilyMemberPayload,
   type UpdatePatientBackgroundPayload,
 } from "../api/patients-api"
 import { patientDetailKeys } from "./use-patient-detail"
@@ -21,6 +24,31 @@ export function useAddFamilyMember(patientId: string) {
 
   return useMutation({
     mutationFn: (payload: CreateFamilyMemberPayload) => createFamilyMember(numericId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: patientDetailKeys(numericId).profile })
+    },
+  })
+}
+
+export function useUpdateFamilyMember(patientId: string) {
+  const queryClient = useQueryClient()
+  const numericId = Number(patientId)
+
+  return useMutation({
+    mutationFn: ({ memberId, payload }: { memberId: string | number; payload: UpdateFamilyMemberPayload }) =>
+      updateFamilyMember(memberId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: patientDetailKeys(numericId).profile })
+    },
+  })
+}
+
+export function useDeleteFamilyMember(patientId: string) {
+  const queryClient = useQueryClient()
+  const numericId = Number(patientId)
+
+  return useMutation({
+    mutationFn: (memberId: string | number) => deleteFamilyMember(memberId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: patientDetailKeys(numericId).profile })
     },

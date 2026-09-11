@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -38,6 +38,19 @@ export const PatientContactDialog: React.FC<PatientContactDialogProps> = ({
     permanent_address: patient.permanentAddress ?? "",
   }))
 
+  useEffect(() => {
+    if (isOpen) {
+      setForm({
+        contact_number: patient.contactNo ?? "",
+        barangay: patient.barangay ?? "",
+        municipality: patient.city ?? "",
+        address: patient.address ?? "",
+        present_address: patient.presentAddress ?? "",
+        permanent_address: patient.permanentAddress ?? "",
+      })
+    }
+  }, [isOpen, patient])
+
   const handleSave = () => {
     onSave({
       contact_number: form.contact_number || undefined,
@@ -51,7 +64,7 @@ export const PatientContactDialog: React.FC<PatientContactDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-fit max-w-xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-3xl p-7 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Edit Contact &amp; Residence Information</DialogTitle>
           <DialogDescription className="text-sm">

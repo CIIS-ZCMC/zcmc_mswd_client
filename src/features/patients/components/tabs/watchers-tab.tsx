@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Spinner } from "@/components/ui/spinner"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { RecordHistoryPopover } from "@/features/audit/components/record-history-popover"
 import { useCaseWatchers } from "@/features/cases/hooks/use-case-watchers"
 import { useCaseWatcherMutations } from "@/features/cases/hooks/use-case-watcher-mutations"
 import type { CaseWatcher } from "@/features/cases/types/watcher.types"
@@ -158,6 +159,7 @@ export const WatchersTab: React.FC<WatchersTabProps> = ({ patient, caseId }) => 
           </CardDescription>
         </div>
         <Button
+          variant="default"
           size="default"
           className="gap-2 font-semibold h-10"
           onClick={() => setIsAddOpen(true)}
@@ -213,6 +215,19 @@ export const WatchersTab: React.FC<WatchersTabProps> = ({ patient, caseId }) => 
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-semibold">
                           Informant
                         </Badge>
+                      )}
+                      {/* The activity-log subject is PatientWatcher — the directory
+                          record — so this is keyed on patientWatcherId, never on the
+                          CaseWatcher's own id: those id spaces are unrelated and
+                          mixing them would quietly show another person's history.
+                          A watcher entered ad hoc for this episode has no directory
+                          row, and so has no history to show. */}
+                      {watch.patientWatcherId && (
+                        <RecordHistoryPopover
+                          subjectType="PatientWatcher"
+                          subjectId={watch.patientWatcherId}
+                          label={`Watcher: ${watch.fullName}`}
+                        />
                       )}
                     </div>
                   </TableCell>

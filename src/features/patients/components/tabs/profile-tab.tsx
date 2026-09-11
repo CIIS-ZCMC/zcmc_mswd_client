@@ -1,6 +1,7 @@
 import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { RecordHistoryPopover } from "@/features/audit/components/record-history-popover"
 import { Briefcase, Edit, Heart, MapPin, Phone, User } from "lucide-react"
 import { useUpdatePatientBackground } from "../../hooks/use-patient-writes"
 import type { PatientRecord } from "../../types"
@@ -23,6 +24,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ patient }) => {
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3.5 border-b border-border/40">
           <CardTitle className="text-lg md:text-xl flex items-center gap-2.5 font-bold">
             <User className="size-6 text-primary" /> Personal Demographics
+            <RecordHistoryPopover subjectType="Patient" subjectId={patient.id} label="Personal Demographics" />
           </CardTitle>
           <Button
             variant="outline"

@@ -6,6 +6,7 @@ import type {
   ApiEnvelope,
   ApiPaginated,
   ApiUnifiedIntakeSheet,
+  ApiWatcherRelationshipType,
 } from "../types/api.types"
 
 /** GET /assistant-types — small unpaginated lookup table for the assistance select. */
@@ -16,6 +17,14 @@ export function listAssistantTypes(activeOnly = true) {
     })
     .then((res) => res.data)
 }
+
+/** GET /watcher-relationship-types — lookup table for watcher relationship options. */
+export function listWatcherRelationshipTypes() {
+  return apiClient
+    .get<ApiEnvelope<ApiWatcherRelationshipType[]>>("/watcher-relationship-types")
+    .then((res) => res.data)
+}
+
 
 export interface IntakeCasePayload {
   case_type: string

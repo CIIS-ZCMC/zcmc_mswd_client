@@ -22,8 +22,12 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({ patient }) => {
             Verification documents &amp; prescriptions.
           </CardDescription>
         </div>
-        <Button size="default" className="gap-2 font-semibold h-10">
-          <Plus className="size-4" /> Upload Document
+        <Button
+          variant="default"
+          size="default"
+          className="h-10 px-4 text-sm font-bold gap-2"
+        >
+          <Plus className="size-4.5" /> Upload Document
         </Button>
       </CardHeader>
       <CardContent>
