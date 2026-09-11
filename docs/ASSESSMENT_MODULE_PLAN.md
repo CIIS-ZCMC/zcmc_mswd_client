@@ -9,15 +9,14 @@ The server half lives in `zcmc_mswd_server/docs/ASSESSMENT_MODULE_PLAN.md` (Phas
 | Phase | Description | Server Gate | Status |
 |-------|-------------|-------------|--------|
 | Phase 1 | TypeScript Types, DTOs & API Client Layer | Server Phase 1–4 | ☑ done |
-| Phase 2 | MSWD Bracket & Net Per Capita Income UI | Server Phase 2 | ◐ component built, not yet mounted |
-| Phase 3 | Re-Assessment Modal & Reason Selection | Server Phase 3 | ◐ component built, not yet mounted |
-| Phase 4 | Assessment Promotion to SCSR Action | Server Phase 3–4 | ◐ hook built, banner not yet mounted |
-| Phase 5 | Assessment History Timeline Component | Server Phase 3–4 | ◐ component built, not yet mounted |
+| Phase 2 | MSWD Bracket & Net Per Capita Income UI | Server Phase 2 | ☑ done |
+| Phase 3 | Re-Assessment Modal & Reason Selection | Server Phase 3 | ☑ done |
+| Phase 4 | Assessment Promotion to SCSR Action | Server Phase 3–4 | ☑ done |
+| Phase 5 | Assessment History Timeline Component | Server Phase 3–4 | ☑ done |
 
-Phases 2–5 ship their components and hooks here, but every one of them is
-mounted from `social-case-tab.tsx`, whose rewrite belongs to **Social Case
-Phase E**. They flip to ☑ when that lands — until then the components exist
-and type-check but nothing renders them.
+Phases 2–5 shipped their components and hooks ahead of a mount point; all of
+them render from `social-case-tab.tsx`, so they only became reachable when
+**Social Case Phase E** rewrote that tab.
 
 
 ---
@@ -47,7 +46,7 @@ Define API types and integration methods for MSWD classification matrices, re-as
 
 ---
 
-## Phase 2 — MSWD Bracket & Net Per Capita Income UI Components ◐
+## Phase 2 — MSWD Bracket & Net Per Capita Income UI Components ☑
 
 Create visual badges, calculation metric cards, and override indicators.
 
@@ -60,7 +59,7 @@ Create visual badges, calculation metric cards, and override indicators.
 
 ---
 
-## Phase 3 — Re-Assessment Modal & Reason Selection ◐
+## Phase 3 — Re-Assessment Modal & Reason Selection ☑
 
 Build a dialog enabling social workers to issue a re-assessment on an existing case episode.
 
@@ -73,7 +72,7 @@ Build a dialog enabling social workers to issue a re-assessment on an existing c
 
 ---
 
-## Phase 4 — Assessment Promotion to SCSR Action ◐
+## Phase 4 — Assessment Promotion to SCSR Action ☑
 
 Provide a seamless elevation path from intake assessment to formal Social Case Study Report.
 
@@ -85,7 +84,7 @@ Provide a seamless elevation path from intake assessment to formal Social Case S
 
 ---
 
-## Phase 5 — Assessment History & Re-Assessment Timeline ◐
+## Phase 5 — Assessment History & Re-Assessment Timeline ☑
 
 Display an append-only timeline of all historical assessments under a patient episode.
 

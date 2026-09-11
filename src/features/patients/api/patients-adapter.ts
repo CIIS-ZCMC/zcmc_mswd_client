@@ -270,6 +270,7 @@ export function toPatientListRecord(raw: ApiPatient): PatientRecord {
 
   return {
     id: String(raw.id),
+    latestCaseId: latestCase?.id,
     hospitalNo: raw.hospital_id != null ? String(raw.hospital_id) : "—",
     mswdNo: raw.mswd_id != null ? String(raw.mswd_id) : "—",
     fullName: buildFullName(raw),
@@ -312,9 +313,6 @@ export function toPatientListRecord(raw: ApiPatient): PatientRecord {
       classificationDetails: buildClassificationSummary(latestAssessment),
       presentingProblem: latestAssessment?.presenting_problem ?? "",
       socialWorkerNotes: latestAssessment?.assessment_notes ?? "",
-      // Belongs to the (separately phased) Financial Assistance module.
-      recommendedAssistance: NOT_ON_FILE,
-      approvedAmount: undefined,
     },
     documents: (raw.documents ?? []).map(toDocumentItem),
     history: [],
@@ -346,10 +344,10 @@ export function toPatientDetailRecord(raw: ApiPatient, extras: PatientDetailExtr
       classificationDetails: buildClassificationSummary(latestAssessment),
       presentingProblem: latestAssessment?.presenting_problem ?? "",
       socialWorkerNotes: latestAssessment?.assessment_notes ?? "",
-      recommendedAssistance: NOT_ON_FILE,
-      approvedAmount: undefined,
     },
     history: history.map(toAuditHistory),
-    latestCaseId: latestCase?.id,
+    // extras.latestCase wins over raw.latest_case when the detail query
+    // supplied one; fall back to whatever the list record already resolved.
+    latestCaseId: latestCase?.id ?? base.latestCaseId,
   }
 }

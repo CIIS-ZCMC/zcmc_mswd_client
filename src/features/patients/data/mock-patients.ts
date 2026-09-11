@@ -97,8 +97,6 @@ export const MOCK_PATIENTS: PatientRecord[] = [
       classificationDetails: "Indigent household with 2 minor dependents; primary earner earns below monthly threshold.",
       presentingProblem: "Patient requires urgent cardiac monitoring and specialized medication not covered under standard PhilHealth limits.",
       socialWorkerNotes: "Conducted intake interview with spouse. Verified indigency certificate from Barangay Sta. Maria. Qualified for Partial Financial Subsidy (MAIFIP).",
-      recommendedAssistance: "Medical Assistance for Indigent Patients (MAIFIP) grant of ₱15,000 for hospital billing and diagnostic labs.",
-      approvedAmount: 15000,
     },
     intakeSheets: [
       {
@@ -298,8 +296,6 @@ export const MOCK_PATIENTS: PatientRecord[] = [
       classificationDetails: "Totally indigent senior citizen patient with zero independent personal income.",
       presentingProblem: "Surgical procedure requirement with surgical mesh and post-op medication.",
       socialWorkerNotes: "Senior citizen living with son's family. Full 100% medical subsidy approved under No Balance Billing (NBB) policy.",
-      recommendedAssistance: "100% No Balance Billing (NBB) Coverage plus DSWD Assistance to Individuals in Crisis Situations (AICS).",
-      approvedAmount: 28500,
     },
     intakeSheets: [
       {
@@ -444,8 +440,6 @@ export const MOCK_PATIENTS: PatientRecord[] = [
       classificationDetails: "Outpatient cancer patient requiring recurring specialized chemotherapy drugs.",
       presentingProblem: "Patient requires financial assistance for Chemotherapy Vials (Trastuzumab / Paclitaxel).",
       socialWorkerNotes: "Case evaluated for PCSO / DOH Cancer Assistance Fund endorsement.",
-      recommendedAssistance: "Endorsement to DOH Cancer Specialty Fund & DSWD AICS Medicine Voucher (₱20,000).",
-      approvedAmount: 20000,
     },
     intakeSheets: [
       {
@@ -582,8 +576,6 @@ export const MOCK_PATIENTS: PatientRecord[] = [
       classificationDetails: "Emergency pediatric admission requiring blood transfusions and ICU monitoring.",
       presentingProblem: "Urgent need for Platelet Concentrate blood units and ICU medicine support.",
       socialWorkerNotes: "Fast-tracked social intake conducted in ER. Blood bank coordination initiated.",
-      recommendedAssistance: "Blood Transfusion Guarantee & MAIFIP Emergency Voucher (₱10,000).",
-      approvedAmount: 10000,
     },
     intakeSheets: [
       {

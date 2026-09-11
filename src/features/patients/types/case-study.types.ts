@@ -50,6 +50,4 @@ export interface SocialCaseStudy {
   classificationDetails: string
   presentingProblem: string
   socialWorkerNotes: string
-  recommendedAssistance: string
-  approvedAmount?: number
 }
