@@ -165,20 +165,92 @@ export interface ApiAssessmentExpense {
   updated_at: string
 }
 
+export interface ApiMswdClassificationMatrix {
+  id: number
+  code: string
+  name: string
+  min_per_capita_income: string | number | null
+  max_per_capita_income: string | number | null
+  discount_percentage: number
+  max_assistance_cap: string | number | null
+  is_indigent: boolean
+  description?: string | null
+}
+
 export interface ApiAssessment {
   id: number
   case_id: number
   created_by: number
+  created_by_user?: ApiUserLite | null
+  parent_assessment_id?: number | null
+  reassessment_reason?: string | null
   total_family_income: string | number | null
+  household_size?: number | null
+  net_per_capita_income?: string | number | null
+  calculated_classification?: string | null
+  classification: string
+  classification_override_reason?: string | null
+  calculated_discount_rate?: number | null
+  has_override?: boolean
   housing_type: string | null
   utilities_access: string | null
-  classification: string
   presenting_problem: string | null
   family_background: string | null
   social_functioning: string | null
   assessment_notes: string | null
   intervention_plan: string | null
+  social_case_status?: string | null
   expenses?: ApiAssessmentExpense[]
+  parent_assessment?: ApiAssessment | null
+  created_at: string
+  updated_at: string
+}
+
+
+export interface ApiSocialCaseExpense {
+  id: number
+  social_case_id?: number
+  assessment_id?: number
+  expense_type: string
+  amount: string | number
+  created_at?: string
+  updated_at?: string
+}
+
+export interface ApiSocialCase {
+  id: number
+  case_id: number
+  social_case_no: string
+  status: "draft" | "for_review" | "finalized"
+  revision: number
+  classification: string
+  total_family_income: string | number | null
+  housing_type: string | null
+  utilities_access: string | null
+  presenting_problem: string | null
+  family_background: string | null
+  social_functioning: string | null
+  assessment_notes: string | null
+  intervention_plan: string | null
+  environmental_factors?: string | null
+  economic_status_notes?: string | null
+  health_condition_notes?: string | null
+  psycho_social_evaluation?: string | null
+  recommendations?: string | null
+  prepared_by_user?: ApiUserLite | null
+  prepared_by?: number | null
+  prepared_at?: string | null
+  noted_by_user?: ApiUserLite | null
+  noted_by?: number | null
+  noted_at?: string | null
+  review_requested_at?: string | null
+  recommended_assistance?: string | null
+  recommended_amount?: string | number | null
+  expenses?: ApiSocialCaseExpense[]
+  expenses_total?: string | number | null
+  is_editable: boolean
+  can_finalize: boolean
+  latest_document?: ApiDocument | null
   created_at: string
   updated_at: string
 }
