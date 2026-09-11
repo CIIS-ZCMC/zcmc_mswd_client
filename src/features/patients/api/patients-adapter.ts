@@ -350,5 +350,6 @@ export function toPatientDetailRecord(raw: ApiPatient, extras: PatientDetailExtr
       approvedAmount: undefined,
     },
     history: history.map(toAuditHistory),
+    latestCaseId: latestCase?.id,
   }
 }

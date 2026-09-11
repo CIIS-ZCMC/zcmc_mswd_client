@@ -17,16 +17,17 @@ import {
   UserCheck,
   Users,
 } from "lucide-react"
+// Family CRUD stays patient-scoped. useAddWatcher is deliberately not imported
+// any more: as of Phase 7 watchers hang off the case episode, and WatchersTab
+// owns that write through use-case-watcher-mutations.
 import {
   useAddFamilyMember,
-  useAddWatcher,
   useDeleteFamilyMember,
   useUpdateFamilyMember,
 } from "../hooks/use-patient-writes"
 import { useIntakeSheetsForPatient } from "../hooks/use-intake-sheets"
 import type { FamilyMember, PatientRecord } from "../types"
 import { FamilyMemberDialog } from "./dialogs/family-member-dialog"
-import { WatcherDialog } from "./dialogs/watcher-dialog"
 import { DocumentsTab } from "./tabs/documents-tab"
 import { FamilyTab } from "./tabs/family-tab"
 import { HistoryTab } from "./tabs/history-tab"
@@ -46,18 +47,12 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
   const [activeTab, setActiveTab] = useState("profile")
   const [isAddFamilyOpen, setIsAddFamilyOpen] = useState(false)
   const [editingFamilyMember, setEditingFamilyMember] = useState<FamilyMember | null>(null)
-  const [isAddWatcherOpen, setIsAddWatcherOpen] = useState(false)
 
   const addFamilyMember = useAddFamilyMember(patient.id)
   const updateFamilyMember = useUpdateFamilyMember(patient.id)
   const deleteFamilyMember = useDeleteFamilyMember(patient.id)
-  const addWatcher = useAddWatcher(patient.id)
   const { data: intakeSheets = [] } = useIntakeSheetsForPatient(patient.id)
 
-  // Both hit the real API and invalidate the patient's profile query on
-  // success (see use-patient-writes.ts) — no more client-synthesized ids or
-  // audit entries; the server's own Auditable trail is what the History tab
-  // reads now.
   const handleAddFamilyMember = (newFamily: Omit<FamilyMember, "id">) => {
     addFamilyMember.mutate({
       name: newFamily.fullName,
@@ -93,18 +88,6 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
 
   const handleDeleteFamilyMember = (memberId: string) => {
     deleteFamilyMember.mutate(memberId)
-  }
-
-  const handleAddWatcher = (watcherData: {
-    fullName: string
-    relationship: string
-    contactNo: string
-  }) => {
-    addWatcher.mutate({
-      name: watcherData.fullName,
-      relationship: watcherData.relationship,
-      contact_number: watcherData.contactNo || patient.contactNo,
-    })
   }
 
   return (
@@ -283,10 +266,7 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
           </TabsContent>
 
           <TabsContent value="watchers">
-            <WatchersTab
-              patient={patient}
-              onOpenAddWatcherDialog={() => setIsAddWatcherOpen(true)}
-            />
+            <WatchersTab patient={patient} caseId={patient.latestCaseId} />
           </TabsContent>
 
           <TabsContent value="caretake">
@@ -320,13 +300,6 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
         }}
         onAddFamilyMember={handleAddFamilyMember}
         onUpdateFamilyMember={handleUpdateFamilyMember}
-      />
-
-      <WatcherDialog
-        isOpen={isAddWatcherOpen}
-        onClose={() => setIsAddWatcherOpen(false)}
-        defaultContactNo={patient.contactNo}
-        onIssueWatcherPass={handleAddWatcher}
       />
     </div>
   )
