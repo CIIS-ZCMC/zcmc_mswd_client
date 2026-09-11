@@ -13,7 +13,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Pencil, Plus, Trash2, Users } from "lucide-react"
+import { RecordHistoryPopover } from "@/features/audit/components/record-history-popover"
+import { Pencil, Plus, Trash2 } from "lucide-react"
 import type { FamilyMember, PatientRecord } from "../../types"
 
 interface FamilyTabProps {
@@ -35,8 +36,8 @@ export const FamilyTab: React.FC<FamilyTabProps> = ({
     <Card className="shadow-xs">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b border-border/40">
         <div>
-          <CardTitle className="text-xl font-extrabold flex items-center gap-2.5">
-            <Users className="size-6 text-primary" /> Family Composition &amp; Economic Dependency
+          <CardTitle className="text-base font-bold">
+            Family Composition &amp; Household Dependents
           </CardTitle>
           <CardDescription className="text-sm mt-1">
             Household members, employment status, and monthly income breakdown for {patient.fullName}.
@@ -71,7 +72,15 @@ export const FamilyTab: React.FC<FamilyTabProps> = ({
             <TableBody>
               {patient.familyMembers.map((fam) => (
                 <TableRow key={fam.id} className="hover:bg-muted/40 transition-colors">
-                  <TableCell className="font-bold text-foreground text-base">{fam.fullName}</TableCell>
+                  <TableCell className="font-bold text-foreground text-base">
+                    <div className="flex items-center gap-2">
+                      <span>{fam.fullName}</span>
+                      {/* Must be the model's class basename — the server resolves
+                          subject_type as App\Models\{type}, so "FamilyMember"
+                          silently matches nothing. */}
+                      <RecordHistoryPopover subjectType="PatientFamilyMember" subjectId={fam.id} label={`Family: ${fam.fullName}`} />
+                    </div>
+                  </TableCell>
                   <TableCell className="font-medium text-base">{fam.relationship}</TableCell>
                   <TableCell className="font-medium text-base">{fam.age} yrs</TableCell>
                   <TableCell className="capitalize font-medium text-base">{fam.sex || "N/A"}</TableCell>

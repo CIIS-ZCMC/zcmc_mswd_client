@@ -34,7 +34,7 @@ import { IdTab } from "./tabs/id-tab"
 import { IntakeSheetTab } from "./tabs/intake-sheet-tab"
 import { ProfileTab } from "./tabs/profile-tab"
 import { SocialCaseTab } from "./tabs/social-case-tab"
-import { StaffTab } from "./tabs/staff-tab"
+import { CaretakeTab } from "./tabs/caretake-tab"
 import { WatchersTab } from "./tabs/watchers-tab"
 
 interface PatientDetailViewProps {
@@ -216,11 +216,11 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
             </TabsTrigger>
 
             <TabsTrigger
-              value="staff"
+              value="caretake"
               className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
             >
               <UserCheck className="size-5" />
-              <span>Staff</span>
+              <span>Caretake</span>
             </TabsTrigger>
 
             <TabsTrigger
@@ -289,8 +289,8 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
             />
           </TabsContent>
 
-          <TabsContent value="staff">
-            <StaffTab patient={patient} />
+          <TabsContent value="caretake">
+            <CaretakeTab patient={patient} />
           </TabsContent>
 
           <TabsContent value="social-case">

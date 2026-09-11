@@ -95,19 +95,19 @@ export interface ReassignCaretakerPayload {
 }
 
 /**
- * PATCH /caretakers/{id}/reassign — ends the current assignment and opens
+ * POST /caretakers/{id}/reassign — ends the current assignment and opens
  * the replacement in one write, stamping `replaced_by_id` so the two render
  * as a chain. Deliberately *not* expressible as unassign + assign: that
  * path leaves the chain broken.
  */
 export function reassignCaretaker(caretakerId: string | number, payload: ReassignCaretakerPayload) {
   return apiClient
-    .patch<ApiEnvelope<ApiCaretaker>>(`/caretakers/${caretakerId}/reassign`, payload)
+    .post<ApiEnvelope<ApiCaretaker>>(`/caretakers/${caretakerId}/reassign`, payload)
     .then((res) => res.data)
 }
 
 export interface UnassignCaretakerPayload {
-  reason?: string
+  unassigned_reason?: string
 }
 
 /** PATCH /caretakers/{id}/unassign — ends custody with no replacement. */

@@ -13,9 +13,9 @@ phase here is gated on a server phase — see the table.
 | Phase | Gate | Status |
 |-------|------|--------|
 | 6. Types, API and adapter | server 4 | ☑ |
-| 7. Caretake tab (custody) | server 3 + phase 6 | ☐ |
-| 8. History tab (accountability) | server 2 + phase 6 | ☐ |
-| 9. Global audit log + inline history | server 4 + phase 6 | ☐ |
+| 7. Caretake tab (custody) | server 3 + phase 6 | ☑ |
+| 8. History tab (accountability) | server 2 + phase 6 | ☑ |
+| 9. Global audit log + inline history | server 4 + phase 6 | ☑ |
 
 ---
 
@@ -112,7 +112,7 @@ mock file edit in this phase, not the next.
 
 ---
 
-## Phase 7 — Caretake tab (custody) ☐
+## Phase 7 — Caretake tab (custody) ☑
 
 **Gate:** server Phase 3 + Phase 6.
 
@@ -165,7 +165,7 @@ correctly.
 
 ---
 
-## Phase 8 — History tab (accountability) ☐
+## Phase 8 — History tab (accountability) ☑
 
 **Gate:** server Phase 2 + Phase 6.
 
@@ -200,7 +200,7 @@ record types that each diff matches what was actually changed.
 
 ---
 
-## Phase 9 — Global audit log and inline history ☐
+## Phase 9 — Global audit log and inline history ☑
 
 **Gate:** server Phase 4 + Phase 6.
 
