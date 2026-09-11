@@ -27,11 +27,12 @@ export const WatchersTab: React.FC<WatchersTabProps> = ({
           </CardDescription>
         </div>
         <Button
+          variant="default"
           size="default"
-          className="gap-2 font-semibold h-10"
+          className="h-10 px-4 text-sm font-bold gap-2"
           onClick={onOpenAddWatcherDialog}
         >
-          <Plus className="size-4" /> Issue Watcher Pass
+          <Plus className="size-4.5" /> Issue Watcher Pass
         </Button>
       </CardHeader>
       <CardContent>

@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -17,7 +17,9 @@ import type { FamilyMember } from "../../types"
 interface FamilyMemberDialogProps {
   isOpen: boolean
   onClose: () => void
+  initialMember?: FamilyMember | null
   onAddFamilyMember: (member: Omit<FamilyMember, "id">) => void
+  onUpdateFamilyMember?: (memberId: string, member: Omit<FamilyMember, "id">) => void
 }
 
 const RELATIONSHIP_OPTIONS = [
@@ -58,11 +60,53 @@ function computeAgeFromBirthdate(birthdateString: string): number | null {
   return age >= 0 ? age : 0
 }
 
+function formatToYmdDate(dateStr?: string | null, age?: number): string {
+  if (dateStr && dateStr.trim()) {
+    const trimmed = dateStr.trim()
+    if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+      return trimmed.slice(0, 10)
+    }
+    const parsed = new Date(trimmed)
+    if (!isNaN(parsed.getTime())) {
+      const yyyy = parsed.getFullYear()
+      const mm = String(parsed.getMonth() + 1).padStart(2, "0")
+      const dd = String(parsed.getDate()).padStart(2, "0")
+      return `${yyyy}-${mm}-${dd}`
+    }
+  }
+  if (age && age > 0) {
+    const estYear = new Date().getFullYear() - age
+    return `${estYear}-01-01`
+  }
+  return ""
+}
+
+function inferSex(sex?: string | null, relationship?: string | null): string {
+  if (sex && sex.trim()) {
+    const lower = sex.trim().toLowerCase()
+    if (lower === "m" || lower === "male") return "male"
+    if (lower === "f" || lower === "female") return "female"
+  }
+  if (relationship && relationship.trim()) {
+    const relLower = relationship.trim().toLowerCase()
+    if (["husband", "father", "son", "brother", "grandfather", "uncle", "nephew"].some((r) => relLower.includes(r))) {
+      return "male"
+    }
+    if (["wife", "mother", "daughter", "sister", "grandmother", "aunt", "niece"].some((r) => relLower.includes(r))) {
+      return "female"
+    }
+  }
+  return ""
+}
+
 export const FamilyMemberDialog: React.FC<FamilyMemberDialogProps> = ({
   isOpen,
   onClose,
+  initialMember,
   onAddFamilyMember,
+  onUpdateFamilyMember,
 }) => {
+  const isEditMode = Boolean(initialMember)
   const [newFamily, setNewFamily] = useState({
     fullName: "",
     relationship: "Child",
@@ -76,6 +120,51 @@ export const FamilyMemberDialog: React.FC<FamilyMemberDialogProps> = ({
     isLivingWithPatient: true,
   })
 
+  useEffect(() => {
+    if (isOpen) {
+      if (initialMember) {
+        const normalizedSex = inferSex(initialMember.sex, initialMember.relationship)
+        const formattedBirthdate = formatToYmdDate(initialMember.birthdate, initialMember.age)
+
+        // Normalize relationship against options case-insensitively
+        const matchRel = RELATIONSHIP_OPTIONS.find(
+          (opt) => opt.toLowerCase() === (initialMember.relationship ?? "").toLowerCase()
+        )
+
+        // Normalize educational attainment against options case-insensitively
+        const matchEdu = EDUCATIONAL_ATTAINMENT_OPTIONS.find(
+          (opt) => opt.toLowerCase() === (initialMember.educationalAttainment ?? "").toLowerCase()
+        )
+
+        setNewFamily({
+          fullName: initialMember.fullName ?? "",
+          relationship: matchRel || initialMember.relationship || "Child",
+          birthdate: formattedBirthdate,
+          sex: normalizedSex,
+          age: initialMember.age || (formattedBirthdate ? computeAgeFromBirthdate(formattedBirthdate) ?? 0 : 0),
+          occupation: initialMember.occupation ?? "",
+          monthlyIncome: initialMember.monthlyIncome ?? 0,
+          educationalAttainment: matchEdu || initialMember.educationalAttainment || "",
+          contactNumber: initialMember.contactNumber ?? "",
+          isLivingWithPatient: initialMember.isLivingWithPatient ?? true,
+        })
+      } else {
+        setNewFamily({
+          fullName: "",
+          relationship: "Child",
+          birthdate: "",
+          sex: "",
+          age: 0,
+          occupation: "",
+          monthlyIncome: 0,
+          educationalAttainment: "",
+          contactNumber: "",
+          isLivingWithPatient: true,
+        })
+      }
+    }
+  }, [isOpen, initialMember])
+
   const handleBirthdateChange = (dateVal: string) => {
     const calculatedAge = computeAgeFromBirthdate(dateVal)
     setNewFamily((prev) => ({
@@ -87,19 +176,11 @@ export const FamilyMemberDialog: React.FC<FamilyMemberDialogProps> = ({
 
   const handleSave = () => {
     if (!newFamily.fullName.trim()) return
-    onAddFamilyMember(newFamily)
-    setNewFamily({
-      fullName: "",
-      relationship: "Child",
-      age: 0,
-      civilStatus: "Single",
-      birthdate: "",
-      sex: "",
-      occupation: "",
-      monthlyIncome: 0,
-      educationalAttainment: "",
-      isDependent: true,
-    })
+    if (isEditMode && initialMember && onUpdateFamilyMember) {
+      onUpdateFamilyMember(initialMember.id, newFamily)
+    } else {
+      onAddFamilyMember(newFamily)
+    }
     onClose()
   }
 
@@ -108,10 +189,12 @@ export const FamilyMemberDialog: React.FC<FamilyMemberDialogProps> = ({
       <DialogContent className="w-full max-w-2xl p-7 max-h-[90vh] overflow-y-auto">
         <DialogHeader className="pb-3 border-b border-border/40">
           <DialogTitle className="text-2xl font-extrabold flex items-center gap-2.5">
-            <Users className="size-6 text-primary" /> Add Family Member
+            <Users className="size-6 text-primary" /> {isEditMode ? "Edit Family Member" : "Add Family Member"}
           </DialogTitle>
           <DialogDescription className="text-base text-muted-foreground mt-1">
-            Register household member details and socio-economic relationship.
+            {isEditMode
+              ? `Update details for ${initialMember?.fullName}.`
+              : "Register household member details and socio-economic relationship."}
           </DialogDescription>
         </DialogHeader>
 
@@ -309,11 +392,11 @@ export const FamilyMemberDialog: React.FC<FamilyMemberDialogProps> = ({
         <DialogFooter className="pt-3 border-t border-border/40">
           <Button
             size="lg"
-            className="h-12 text-lg font-bold px-8 shadow-sm"
+            className="h-12 text-lg font-bold px-8 shadow-sm cursor-pointer"
             disabled={!newFamily.fullName.trim()}
             onClick={handleSave}
           >
-            Save Family Member
+            {isEditMode ? "Update Family Member" : "Save Family Member"}
           </Button>
         </DialogFooter>
       </DialogContent>
