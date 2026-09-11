@@ -38,6 +38,10 @@ import { SocialCaseTab } from "./tabs/social-case-tab"
 import { CaretakeTab } from "./tabs/caretake-tab"
 import { WatchersTab } from "./tabs/watchers-tab"
 
+import { WatcherStatusBanner } from "./watcher-status-banner"
+import { WatcherWaiverDialog } from "./dialogs/watcher-waiver-dialog"
+import { useCaseWatcherMutations } from "@/features/cases/hooks/use-case-watcher-mutations"
+
 interface PatientDetailViewProps {
   patient: PatientRecord
   onUpdatePatient?: (updatedPatient: PatientRecord) => void
@@ -46,8 +50,13 @@ interface PatientDetailViewProps {
 export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient }) => {
   const [activeTab, setActiveTab] = useState("profile")
   const [isAddFamilyOpen, setIsAddFamilyOpen] = useState(false)
+  const [isWaiverOpen, setIsWaiverOpen] = useState(false)
   const [editingFamilyMember, setEditingFamilyMember] = useState<FamilyMember | null>(null)
 
+  const watcherMutations = useCaseWatcherMutations({
+    caseId: patient.latestCaseId ?? 0,
+    patientId: Number(patient.id),
+  })
   const addFamilyMember = useAddFamilyMember(patient.id)
   const updateFamilyMember = useUpdateFamilyMember(patient.id)
   const deleteFamilyMember = useDeleteFamilyMember(patient.id)
@@ -66,6 +75,12 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
       contact_number: newFamily.contactNumber || undefined,
       is_living_with_patient: newFamily.isLivingWithPatient,
     })
+  }
+
+  const handleRevokeWaiver = async () => {
+    if (window.confirm("Are you sure you want to revoke the watcher waiver for this admission episode?")) {
+      await watcherMutations.destroyWaiver()
+    }
   }
 
   const handleUpdateFamilyMember = (memberId: string, updatedFamily: Omit<FamilyMember, "id">) => {
@@ -158,6 +173,13 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
 
       {/* Main 8-Tab Workspace */}
       <div className="flex-1 p-6 space-y-6">
+        <WatcherStatusBanner
+          caseId={patient.latestCaseId}
+          onOpenWaiverDialog={() => setIsWaiverOpen(true)}
+          onRevokeWaiver={handleRevokeWaiver}
+          isRevokingWaiver={watcherMutations.isDestroyingWaiver}
+        />
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="mb-6 flex flex-wrap items-center justify-start w-full gap-2.5 group-data-horizontal/tabs:h-auto h-auto p-2 bg-muted/60 rounded-2xl border border-border/80 shadow-2xs">
             <TabsTrigger
@@ -300,6 +322,15 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
         }}
         onAddFamilyMember={handleAddFamilyMember}
         onUpdateFamilyMember={handleUpdateFamilyMember}
+      />
+
+      <WatcherWaiverDialog
+        isOpen={isWaiverOpen}
+        onClose={() => setIsWaiverOpen(false)}
+        onStoreWaiver={async (payload) => {
+          await watcherMutations.storeWaiver(payload)
+        }}
+        isSubmitting={watcherMutations.isStoringWaiver}
       />
     </div>
   )
