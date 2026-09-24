@@ -83,4 +83,6 @@ export interface PatientRecord {
   documents: DocumentItem[]
   history: AuditHistory[]
   latestCaseId?: number
+  /** The patient's hospital number (emdPatients.patid), for HIS encounter reads. */
+  hospitalId?: number
 }
