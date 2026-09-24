@@ -31,6 +31,7 @@ import { FamilyMemberDialog } from "./dialogs/family-member-dialog"
 import { DocumentsTab } from "./tabs/documents-tab"
 import { FamilyTab } from "./tabs/family-tab"
 import { HistoryTab } from "./tabs/history-tab"
+import { HospitalEncountersTab } from "./tabs/hospital-encounters-tab"
 import { IdTab } from "./tabs/id-tab"
 import { IntakeSheetTab } from "./tabs/intake-sheet-tab"
 import { ProfileTab } from "./tabs/profile-tab"
@@ -237,6 +238,14 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
             </TabsTrigger>
 
             <TabsTrigger
+              value="hospital-encounters"
+              className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
+            >
+              <Building2 className="size-5" />
+              <span>Hospital Encounters</span>
+            </TabsTrigger>
+
+            <TabsTrigger
               value="intake-sheet"
               className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
             >
@@ -297,6 +306,10 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
 
           <TabsContent value="social-case">
             <SocialCaseTab patient={patient} />
+          </TabsContent>
+
+          <TabsContent value="hospital-encounters">
+            <HospitalEncountersTab patient={patient} />
           </TabsContent>
 
           <TabsContent value="intake-sheet">

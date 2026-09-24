@@ -271,6 +271,7 @@ export function toPatientListRecord(raw: ApiPatient): PatientRecord {
   return {
     id: String(raw.id),
     latestCaseId: latestCase?.id,
+    hospitalId: raw.hospital_id ?? undefined,
     hospitalNo: raw.hospital_id != null ? String(raw.hospital_id) : "—",
     mswdNo: raw.mswd_id != null ? String(raw.mswd_id) : "—",
     fullName: buildFullName(raw),
