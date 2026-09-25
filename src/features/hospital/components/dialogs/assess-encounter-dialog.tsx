@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { AlertCircle, ClipboardCheck, Loader2 } from "lucide-react"
 import { ApiError } from "@/lib/api-client"
 import { useAssessEncounter, useAssignableCases } from "../../hooks/use-hospital-encounters"
 
@@ -64,76 +64,78 @@ export const AssessEncounterDialog: React.FC<AssessEncounterDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[480px]">
-        <DialogHeader>
-          <DialogTitle>Assess hospital encounter</DialogTitle>
-          <DialogDescription>
-            Attach this HIS encounter to one of the patient's open cases. Only the patient's own open cases appear.
+        <DialogHeader className="space-y-1.5">
+          <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2 text-primary">
+            <ClipboardCheck className="w-5 h-5 text-primary shrink-0" />
+            Assess Hospital Encounter
+          </DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm font-medium leading-relaxed">
+            Attach encounter #{encounterId} to one of the patient's open social cases.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-2">
           <div className="space-y-2">
-            <Label className="font-semibold text-xs uppercase tracking-wider">
-              Attach to case <span className="text-destructive">*</span>
+            <Label className="font-bold text-xs uppercase tracking-wider text-foreground">
+              Attach to Social Case <span className="text-destructive">*</span>
             </Label>
 
             {isLoading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" /> Loading cases…
+              <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground font-medium border rounded-lg bg-muted/30">
+                <Loader2 className="w-4 h-4 animate-spin text-primary" /> Loading open cases…
               </div>
             ) : cases.length === 0 ? (
-              <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-3 flex gap-2.5 items-start text-xs text-amber-800 dark:text-amber-300">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-3 flex gap-2.5 items-start text-xs sm:text-sm font-medium text-amber-900 dark:text-amber-200">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
                 <span>This patient has no open case. Open a case first, then assess the encounter into it.</span>
               </div>
             ) : (
               <Select
                 value={caseId}
                 onValueChange={(value) => {
-                  setCaseId(value)
+                  setCaseId(value || "")
                   if (error) setError("")
                 }}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a case" />
+                <SelectTrigger className="h-10 text-sm font-medium px-3 border">
+                  <SelectValue placeholder="Select an open case" />
                 </SelectTrigger>
                 <SelectContent>
                   {cases.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.caseCode} · {c.status}
+                    <SelectItem key={c.id} value={String(c.id)} className="text-sm font-medium py-2">
+                      Case #{c.caseCode} · {c.status}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             )}
 
-            {error && <p className="text-xs text-destructive font-medium">{error}</p>}
+            {error && <p className="text-xs text-destructive font-semibold pt-0.5">{error}</p>}
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2 sm:gap-2">
           <Button
             type="button"
             variant="outline"
-            size="senior"
             onClick={() => onOpenChange(false)}
             disabled={assess.isPending}
-            className="border-2 font-bold text-sm h-11 px-5"
+            className="border font-bold text-sm h-10 px-4"
           >
             Cancel
           </Button>
           <Button
             type="button"
-            size="senior"
             onClick={handleConfirm}
             disabled={assess.isPending || cases.length === 0 || !caseId}
-            className="font-extrabold text-sm h-11 px-6 shadow-md transition-all"
+            className="font-extrabold text-sm h-10 px-5 shadow-sm transition-all gap-1.5"
           >
-            {assess.isPending && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
-            Attach to case
+            {assess.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardCheck className="w-4 h-4" />}
+            Attach to Case
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
+
