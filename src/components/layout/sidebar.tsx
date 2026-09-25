@@ -1,4 +1,5 @@
 import React from "react"
+import { useLocation, useNavigate } from "react-router"
 import type { PatientRecord } from "@/features/patients/types"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -16,6 +17,8 @@ import {
   ShieldCheck,
   History,
   Users,
+  Briefcase,
+  BarChart3,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -42,7 +45,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   patients,
   selectedPatientId,
   onSelectPatient,
-  currentView = "patients",
+  currentView: _currentView = "patients",
   onViewChange,
   page,
   totalPages,
@@ -56,7 +59,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onDateChange,
   onClearFilters,
 }) => {
+  const navigate = useNavigate()
+  const location = useLocation()
   const canViewAudit = usePermission("audit.view")
+  const canViewCases = usePermission("cases.view")
+  const canViewReports = usePermission("reports.view")
+
+  const isPatientsRoute = location.pathname === "/" || location.pathname.startsWith("/patients")
+  const isCaseloadRoute = location.pathname.startsWith("/caseload") || location.pathname.startsWith("/cases")
+  const isReportsRoute = location.pathname.startsWith("/reports")
+  const isAuditRoute = location.pathname.startsWith("/audit")
 
   const getCategoryBadgeVariant = (category: string) => {
     switch (category) {
@@ -73,34 +85,77 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className="flex h-full w-88 flex-col border-r border-border bg-card/60 text-foreground transition-colors duration-200">
-      {/* View Selector Nav (Patients vs Global Audit Log) */}
-      <div className="p-3 border-b border-border/80 bg-muted/30 flex items-center gap-2">
+      {/* View Selector Nav (Patients vs Caseload vs Reports vs Global Audit Log) */}
+      <div className="p-2.5 border-b border-border/80 bg-muted/30 flex items-center gap-1.5 flex-wrap">
         <button
-          onClick={() => onViewChange?.("patients")}
+          onClick={() => {
+            onViewChange?.("patients")
+            if (selectedPatientId) {
+              navigate(`/patients/${selectedPatientId}`)
+            } else {
+              navigate("/")
+            }
+          }}
           className={cn(
-            "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border",
-            currentView === "patients"
+            "flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer border min-w-20",
+            isPatientsRoute
               ? "bg-primary text-primary-foreground border-primary shadow-xs"
               : "bg-background text-muted-foreground border-border hover:bg-muted"
           )}
         >
-          <Users className="size-4" /> Patients
+          <Users className="size-3.5" /> Patients
         </button>
 
-        {canViewAudit && (
+        {canViewCases && (
           <button
-            onClick={() => onViewChange?.("audit-log")}
+            onClick={() => {
+              navigate("/caseload")
+            }}
             className={cn(
-              "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer border",
-              currentView === "audit-log"
+              "flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer border min-w-20",
+              isCaseloadRoute
                 ? "bg-primary text-primary-foreground border-primary shadow-xs"
                 : "bg-background text-muted-foreground border-border hover:bg-muted"
             )}
           >
-            <History className="size-4" /> Audit Log
+            <Briefcase className="size-3.5" /> Caseload
+          </button>
+        )}
+
+        {canViewReports && (
+          <button
+            onClick={() => {
+              navigate("/reports/social-cases")
+            }}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer border min-w-20",
+              isReportsRoute
+                ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                : "bg-background text-muted-foreground border-border hover:bg-muted"
+            )}
+          >
+            <BarChart3 className="size-3.5" /> Reports
+          </button>
+        )}
+
+        {canViewAudit && (
+          <button
+            onClick={() => {
+              onViewChange?.("audit-log")
+              navigate("/audit")
+            }}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer border min-w-20",
+              isAuditRoute
+                ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                : "bg-background text-muted-foreground border-border hover:bg-muted"
+            )}
+          >
+            <History className="size-3.5" /> Audit
           </button>
         )}
       </div>
+
 
       {/* Sidebar Header */}
       <div className="flex flex-col gap-3.5 border-b border-border p-4">

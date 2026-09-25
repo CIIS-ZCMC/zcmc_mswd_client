@@ -1,9 +1,14 @@
-import React, { useState } from "react"
+import React from "react"
+import { Routes, Route, useParams, useNavigate } from "react-router"
 import { Header } from "./header"
 import { Sidebar } from "./sidebar"
 import { ShieldCheck } from "lucide-react"
 import { PatientDetailView } from "@/features/patients/components/patient-detail-view"
 import { AuditLogPage } from "@/features/audit/components/audit-log-page"
+import { CaseloadPage } from "@/features/cases/components/caseload-page"
+import { CaseDetailPage } from "@/features/cases/components/case-detail-page"
+import { SocialCaseReportsPage } from "@/features/reports/components/social-case-reports-page"
+import { usePatientDetail } from "@/features/patients/hooks/use-patient-detail"
 import type { PatientRecord } from "@/features/patients/types"
 
 interface MainLayoutProps {
@@ -25,6 +30,38 @@ interface MainLayoutProps {
   onClearFilters: () => void
 }
 
+const PatientDetailRouteWrapper: React.FC<{
+  fallbackPatient?: PatientRecord
+  onUpdatePatient: (updated: PatientRecord) => void
+}> = ({ fallbackPatient, onUpdatePatient }) => {
+  const { patientId } = useParams<{ patientId: string }>()
+  const { patient, setLocalPatient } = usePatientDetail(patientId || fallbackPatient?.id || "")
+
+  const activePatient = patient ?? fallbackPatient
+
+  if (!activePatient) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center text-muted-foreground p-6 text-center">
+        <ShieldCheck className="size-12 stroke-1 opacity-50 mb-3" />
+        <p className="text-base font-bold">No Patient Selected</p>
+        <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+          Select a patient from the registry sidebar to view their complete clinical & social work profile.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <PatientDetailView
+      patient={activePatient}
+      onUpdatePatient={(updated) => {
+        setLocalPatient(updated)
+        onUpdatePatient(updated)
+      }}
+    />
+  )
+}
+
 export const MainLayout: React.FC<MainLayoutProps> = ({
   patients,
   selectedPatient,
@@ -43,7 +80,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   onDateChange,
   onClearFilters,
 }) => {
-  const [currentView, setCurrentView] = useState<"patients" | "audit-log">("patients")
+  const navigate = useNavigate()
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground transition-colors duration-200 overflow-hidden font-sans">
@@ -54,10 +91,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           selectedPatientId={selectedPatientId}
           onSelectPatient={(id) => {
             onSelectPatient(id)
-            setCurrentView("patients")
+            navigate(`/patients/${id}`)
           }}
-          currentView={currentView}
-          onViewChange={setCurrentView}
           page={page}
           totalPages={totalPages}
           total={total}
@@ -71,26 +106,39 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           onClearFilters={onClearFilters}
         />
         <main className="flex-1 overflow-hidden">
-          {currentView === "audit-log" ? (
-            <AuditLogPage
-              onSelectPatient={(id) => {
-                onSelectPatient(id)
-                setCurrentView("patients")
-              }}
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <PatientDetailRouteWrapper
+                  fallbackPatient={selectedPatient}
+                  onUpdatePatient={onUpdatePatient}
+                />
+              }
             />
-          ) : selectedPatient ? (
-            <PatientDetailView
-              patient={selectedPatient}
-              onUpdatePatient={onUpdatePatient}
+            <Route
+              path="/patients/:patientId"
+              element={<PatientDetailRouteWrapper onUpdatePatient={onUpdatePatient} />}
             />
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
-              <ShieldCheck className="size-12 stroke-1 opacity-50 mb-3" />
-              <p className="text-base font-bold">No Patient Selected</p>
-            </div>
-          )}
+            <Route path="/caseload" element={<CaseloadPage />} />
+            <Route path="/cases/:caseId" element={<CaseDetailPage />} />
+            <Route path="/reports" element={<SocialCaseReportsPage />} />
+            <Route path="/reports/social-cases" element={<SocialCaseReportsPage />} />
+            <Route
+              path="/audit"
+              element={
+                <AuditLogPage
+                  onSelectPatient={(id) => {
+                    onSelectPatient(id)
+                    navigate(`/patients/${id}`)
+                  }}
+                />
+              }
+            />
+          </Routes>
         </main>
       </div>
     </div>
   )
 }
+

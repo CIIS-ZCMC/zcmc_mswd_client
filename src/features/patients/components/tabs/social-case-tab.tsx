@@ -26,6 +26,7 @@ import { MswdClassificationCard } from "@/features/cases/components/mswd-classif
 import { AssessmentHistoryTimeline } from "@/features/cases/components/assessment-history-timeline"
 import type { UpdateSocialCasePayload } from "@/features/cases/types"
 import type { PatientRecord } from "../../types"
+import { useNavigate } from "react-router"
 import {
   AlertCircle,
   AlertTriangle,
@@ -34,6 +35,7 @@ import {
   CheckCircle,
   Download,
   Edit,
+  ExternalLink,
   FileCheck,
   FilePlus,
   FileText,
@@ -45,13 +47,18 @@ import {
 } from "lucide-react"
 
 interface SocialCaseTabProps {
-  patient: PatientRecord
+  patient: PatientRecord | any
+  caseId?: number
+  caseCode?: string
 }
 
-export const SocialCaseTab: React.FC<SocialCaseTabProps> = ({ patient }) => {
-  const caseId = patient.latestCaseId
+export const SocialCaseTab: React.FC<SocialCaseTabProps> = ({ patient, caseId: propCaseId, caseCode: propCaseCode }) => {
+  const navigate = useNavigate()
+  const caseId = propCaseId ?? patient.latestCaseId
+  const caseCode = propCaseCode ?? patient.caseStudy?.caseNumber ?? (caseId ? `CASE-${caseId}` : "—")
   const patientId = Number(patient.id)
 
+  const canViewCases = usePermission("cases.view")
   const canCreateCase = usePermission("cases.create")
   const canUpdateCase = usePermission("cases.update")
   const canFinalizeCase = usePermission("cases.finalize_social_case")
@@ -74,6 +81,22 @@ export const SocialCaseTab: React.FC<SocialCaseTabProps> = ({ patient }) => {
   const [reassessDialogOpen, setReassessDialogOpen] = useState(false)
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
 
+  // 0. Permission Gate
+  if (!canViewCases) {
+    return (
+      <Card className="border border-border/80 shadow-sm">
+        <CardContent className="py-12 px-4 text-center space-y-3">
+          <div className="mx-auto w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-600">
+            <Lock className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-bold text-foreground">Permission Required</h3>
+          <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
+            You do not hold permission (<code className="font-mono text-primary font-bold">cases.view</code>) to access the Social Case Study Report module.
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
 
   // 1. State 1: No Case Episode
   if (!caseId) {
@@ -144,7 +167,7 @@ export const SocialCaseTab: React.FC<SocialCaseTabProps> = ({ patient }) => {
               <Badge variant="outline" className="text-xs font-bold">Uninitiated Snapshot</Badge>
             </div>
             <CardDescription className="text-xs font-mono font-semibold">
-              Case Code: {patient.caseStudy.caseNumber}
+              Case Code: {caseCode}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 py-4">
@@ -318,12 +341,24 @@ export const SocialCaseTab: React.FC<SocialCaseTabProps> = ({ patient }) => {
                 )}
               </div>
               <CardDescription className="text-xs font-mono font-bold text-muted-foreground">
-                SCSR Control No: <span className="text-primary font-extrabold text-sm">{socialCase.socialCaseNo}</span> · Case Code: {patient.caseStudy.caseNumber}
+                SCSR Control No: <span className="text-primary font-extrabold text-sm">{socialCase.socialCaseNo}</span> · Case Code: {caseCode}
               </CardDescription>
             </div>
 
             {/* Action Bar — Senior Friendly Touch Targets */}
             <div className="flex items-center gap-3 flex-wrap">
+              {caseId && (
+                <Button
+                  variant="outline"
+                  size="senior"
+                  onClick={() => navigate(`/cases/${caseId}`)}
+                  className="border-2 border-primary/40 text-foreground font-bold text-xs sm:text-sm h-11 px-4 hover:bg-primary/10 transition-all gap-1.5"
+                >
+                  <ExternalLink className="w-4 h-4 text-primary" />
+                  View Case Episode
+                </Button>
+              )}
+
               {/* Re-assess Patient Button */}
               <Button
                 variant="outline"
@@ -448,8 +483,17 @@ export const SocialCaseTab: React.FC<SocialCaseTabProps> = ({ patient }) => {
           {actionError && (
             <Alert variant="destructive" className="text-xs border border-destructive/50">
               <AlertTriangle className="w-4 h-4" />
-              <AlertTitle className="font-bold">SCSR Action Failed</AlertTitle>
-              <AlertDescription className="mt-1 leading-relaxed">{actionError}</AlertDescription>
+              <AlertTitle className="font-bold">
+                {actionError.toLowerCase().includes("watcher") ? "Watcher Requirement Missing" : "SCSR Action Failed"}
+              </AlertTitle>
+              <AlertDescription className="mt-1 leading-relaxed">
+                {actionError}
+                {actionError.toLowerCase().includes("watcher") && (
+                  <p className="mt-2 font-medium text-destructive-foreground/90">
+                    💡 Tip: Case sign-off requires an active Case Watcher. Please switch to the <strong>Watchers</strong> tab to register or verify the patient watcher details before retrying.
+                  </p>
+                )}
+              </AlertDescription>
             </Alert>
           )}
 

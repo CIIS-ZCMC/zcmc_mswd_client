@@ -1,4 +1,5 @@
 import React, { useState } from "react"
+import { useSearchParams, useNavigate } from "react-router"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,15 +12,14 @@ import {
   Eye,
   FileSpreadsheet,
   FileText,
+  FolderPlus,
   History,
   Printer,
   User,
   UserCheck,
   Users,
 } from "lucide-react"
-// Family CRUD stays patient-scoped. useAddWatcher is deliberately not imported
-// any more: as of Phase 7 watchers hang off the case episode, and WatchersTab
-// owns that write through use-case-watcher-mutations.
+import { usePermission } from "@/features/auth/hooks/use-permission"
 import {
   useAddFamilyMember,
   useDeleteFamilyMember,
@@ -28,6 +28,7 @@ import {
 import { useIntakeSheetsForPatient } from "../hooks/use-intake-sheets"
 import type { FamilyMember, PatientRecord } from "../types"
 import { FamilyMemberDialog } from "./dialogs/family-member-dialog"
+import { OpenCaseDialog } from "@/features/cases/components/dialogs/open-case-dialog"
 import { DocumentsTab } from "./tabs/documents-tab"
 import { FamilyTab } from "./tabs/family-tab"
 import { HistoryTab } from "./tabs/history-tab"
@@ -49,10 +50,27 @@ interface PatientDetailViewProps {
 }
 
 export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient }) => {
-  const [activeTab, setActiveTab] = useState("profile")
+  const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const canCreateCase = usePermission("cases.create")
+
+  const activeTab = searchParams.get("tab") || "profile"
+  const setActiveTab = (tab: string) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.set("tab", tab)
+        return next
+      },
+      { replace: true }
+    )
+  }
+
+  const [isOpenCaseOpen, setIsOpenCaseOpen] = useState(false)
   const [isAddFamilyOpen, setIsAddFamilyOpen] = useState(false)
   const [isWaiverOpen, setIsWaiverOpen] = useState(false)
   const [editingFamilyMember, setEditingFamilyMember] = useState<FamilyMember | null>(null)
+
 
   const watcherMutations = useCaseWatcherMutations({
     caseId: patient.latestCaseId ?? 0,
@@ -151,6 +169,17 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
           </div>
 
           <div className="flex items-center gap-3">
+            {canCreateCase && (
+              <Button
+                variant="default"
+                size="default"
+                className="gap-2 text-base font-bold h-11 px-4 shadow-sm"
+                onClick={() => setIsOpenCaseOpen(true)}
+              >
+                <FolderPlus className="size-5" />
+                Open Case
+              </Button>
+            )}
             <Button
               variant="outline"
               size="default"
@@ -161,7 +190,7 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
               Print Case Study
             </Button>
             <Button
-              variant="default"
+              variant="outline"
               size="default"
               className="gap-2 text-base font-bold h-11 px-4"
             >
@@ -171,6 +200,7 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
           </div>
         </div>
       </div>
+
 
       {/* Main 8-Tab Workspace */}
       <div className="flex-1 p-6 space-y-6">
@@ -345,6 +375,21 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
         }}
         isSubmitting={watcherMutations.isStoringWaiver}
       />
+
+      <OpenCaseDialog
+        open={isOpenCaseOpen}
+        onOpenChange={setIsOpenCaseOpen}
+        patientId={patient.id}
+        patientName={patient.fullName}
+        hospitalNumber={patient.hospitalNo}
+        onCaseOpened={(newCase) => {
+          setIsOpenCaseOpen(false)
+          if (newCase?.id) {
+            navigate(`/cases/${newCase.id}`)
+          }
+        }}
+      />
     </div>
   )
 }
+

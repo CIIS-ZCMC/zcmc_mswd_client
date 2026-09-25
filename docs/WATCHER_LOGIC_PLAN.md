@@ -1,390 +1,143 @@
 # MSS — Watcher Logic Plan (Client)
 
 Client half of the plan replacing the patient-scoped `patient_watchers` model
-with episode-scoped `case_watchers`. The server half — schema, requirement
-resolver, endpoints, transition enforcement, and the backfill command — is
-**fully shipped**: `zcmc_mswd_server/docs/WATCHER_LOGIC_PLAN.md`, Phases 1–5,
-all ☑. Nothing here is blocked from starting.
+with episode-scoped `case_watchers`.
+
+This document was rewritten on **2026-09-25** after auditing the shipped code.
+The previous revision had a contradictory status (the summary table showed
+Phases 6–8 ☑ while the section headers still read ☐) and described a data layer
+that no longer matches the codebase. The client work is, in fact, **built and
+wired** — types, API, adapter, hooks, the case-scoped tab, the pass dialogs, the
+requirement banner, the waiver dialog, and the intake optimistic guard. The one
+genuinely unbuilt item is the "Missing watcher" worklist filter, which is blocked
+on a server filter that was never planned.
+
+The server half is **fully shipped**: `zcmc_mswd_server/docs/WATCHER_LOGIC_PLAN.md`,
+Phases 1–5 all ☑ (schema, requirement resolver, endpoints/DTOs/resources,
+transition enforcement, backfill command). The `watcher_status` payload also
+carries a resolved `waiver` block (`reason`, `note`, `waived_by`, `waived_at`)
+as of the server's 2026-09-24 follow-up.
 
 **Status legend:** ☐ not started · ◐ in progress · ☑ done
 
-| Phase | Status | Depends on |
-|-------|--------|------------|
-| 6. Types + adapter + API layer | ☑ | server Phase 3 (shipped) |
-| 7. Watchers UI goes case-scoped | ☑ | client Phase 6 |
-| 8. Requirement banner, waiver dialog, worklist filter | ☑ | client Phase 6; server Phase 4 (shipped) |
-
-Each phase ships independently and is additive — the existing
-`/patients/{id}/watchers` endpoints stay live on the server throughout, so
-nothing here needs a coordinated deploy.
+| Phase | Depends on | Status |
+|-------|-----------|--------|
+| 6. Types + adapter + API layer | server 3 | ☑ done |
+| 7. Watchers UI goes case-scoped | client 6 | ☑ done |
+| 8. Requirement banner + waiver dialog + optimistic guard | client 6; server 4 | ☑ done |
+| 9. "Missing watcher" worklist filter | server addition (unbuilt) | ☐ blocked |
 
 ---
 
-## 1. Background — what's actually true in this client today
+## What is built today (as-built record)
 
-The server doc's original client sketch (its §8) assumed a case-detail page
-already existed for the Watchers tab to "move to." Checked before writing
-this plan — **it doesn't.** `src/features/cases/{api,hooks,types}/` exist as
-directories but are completely empty; there is no case-scoped route, page,
-or component anywhere in the app. `src/features/reference/{api,hooks,types}/`
-are likewise empty scaffolds — every reference lookup the app uses today
-(sectors, assistant types, etc.) is fetched ad hoc, not through a shared
-`reference` feature. Every phase below is written around this reality
-instead of the page that doesn't exist.
+### Phase 6 — data layer ☑
 
-Three things that matter for what follows:
+The patient-scoped `Watcher` placeholder model is retired. Case-scoped types and
+plumbing live in `src/features/cases/`:
 
-1. **Everything is patient-centric.** `patient-detail-view.tsx` renders 9
-   tabs (`profile`, `id`, `family`, `watchers`, `staff`, `social-case`,
-   `documents`, `history`, `intake-sheet`), all fed by `usePatientDetail`.
-   There is no equivalent `useCaseDetail` or case route. `getLatestCaseForPatient`
-   (`patients-api.ts`) is the only place a "case" is fetched today, and it
-   hits `GET /cases?filter[patient_id]=…&per_page=1` — the **list** endpoint,
-   which never carries `watchers` or `watcher_status` (only
-   `GET /cases/{case}/profile` does, per the server's Phase 3 design — those
-   two keys are deliberately gated on eager-loading `watchers`, which only
-   the profile endpoint does, to avoid an N+1 across every other place
-   `CaseModelResource` is reused).
-2. **The watcher API surface already exists** (`createWatcher` in
-   `patients-api.ts`, `ApiWatcher` in `api.types.ts`, `Watcher` type,
-   `watchers-tab.tsx`, `watcher-dialog.tsx`) — all patient-scoped, all
-   exactly matching what the server doc's §1 called out as the problem this
-   whole feature exists to fix. `watcher.types.ts`'s own doc comment already
-   says as much: `passNo`/`validUntil` are placeholder strings because the
-   backing columns didn't exist. They do now (`case_watchers.pass_number`,
-   `.pass_valid_until`, `.pass_status`).
-3. **Case-level write actions barely exist yet.** `useSubmitIntakeSheet` /
-   `useFinalizeIntakeSheet` (`use-intake-sheets.ts`) are real and wired to
-   buttons. There is no client-side "close case" or "approve assistance"
-   action anywhere — so Phase 8's "disable the blocked action" guard only has
-   two real buttons to attach to today (Submit/Finalize Intake), not the
-   four the server enforces (close case and approve assistance are
-   server-enforced already; the client just has no button that could hit
-   them yet).
+| File | Role |
+|------|------|
+| [watcher.types.ts](../src/features/cases/types/watcher.types.ts) | `CaseWatcher`, `WatcherRequirement`, `WatcherStatus` (`passStatus` is now a real `"active"\|"expired"\|"revoked"`, not a placeholder) |
+| [case-watchers-api.ts](../src/features/cases/api/case-watchers-api.ts) | `listCaseWatchers`, `getWatcherStatus`, `createCaseWatcher`, `updateCaseWatcher`, `deleteCaseWatcher`, `promoteCaseWatcher`, `issueWatcherPass`, `revokeWatcherPass`, and the waiver store/destroy |
+| [case-watchers-adapter.ts](../src/features/cases/api/case-watchers-adapter.ts) | `toCaseWatcher`, `toWatcherStatus` |
+| [use-case-watchers.ts](../src/features/cases/hooks/use-case-watchers.ts) | `caseWatcherKeys`, `useCaseWatchers`, `useWatcherStatus` |
+| [use-case-watcher-mutations.ts](../src/features/cases/hooks/use-case-watcher-mutations.ts) | create/update/delete/promote/issue-pass/revoke-pass, invalidating watchers + status + patient detail keys |
+| [watcher-relationship-types-api.ts](../src/features/reference/api/watcher-relationship-types-api.ts) | the relationship master-list lookup |
 
-**Given all of this, "the tab moves from patient to case" (server §8) is
-rewritten below as "the tab's data and mutations move to being case-scoped,
-while staying physically inside the patient detail view."** Building a real
-case-detail page is a separate, larger initiative outside this plan's scope
-— if and when one exists, moving the already-case-scoped tab into it is a
-placement change, not a data-layer one, because Phase 7 does that work now.
+`createCaseWatcher` supports both server paths — `patient_watcher_id` (link a
+directory entry) or a full inline person — matching `StoreCaseWatcherRequest`.
 
-This also intersects with the **separate, already-in-progress**
-`API_CONTRACT_SYNC_PLAN.md` in this repo (client Phases 5–8, all still ☐
-despite some of Phase 8's permission-gating already appearing to be
-implemented in `use-patient-detail.ts` — worth a quick recheck against that
-doc before starting here, since both plans touch `patients-adapter.ts`,
-`patient-detail-view.tsx`, and the sidebar). That plan's Phase 7 (server-driven
-sidebar filters) is a prerequisite for this plan's "Missing watcher" worklist
-filter in Phase 8 below.
+### Phase 7 — case-scoped Watchers tab ☑
 
----
+[watchers-tab.tsx](../src/features/patients/components/tabs/watchers-tab.tsx) now
+reads `useCaseWatchers(caseId)`, not `patient.watchers`. It:
 
-## 2. Phase 6 — Types, API, adapter ☐
+- takes a `caseId` prop and shows a "No Active Admission Case" empty state when
+  absent (rather than 404-ing against `undefined`);
+- renders real Role (Primary / Informant), Pass Number, Valid Until and Status
+  columns — no more placeholder strings;
+- offers per-row Make Primary, Edit, Issue/Reissue Pass, Revoke Pass, Remove;
+- keys the `RecordHistoryPopover` on `patientWatcherId` (the directory subject),
+  correctly showing nothing for an ad-hoc episode watcher with no directory row.
 
-No visible UI change. Wires the data layer so Phase 7 has something to call.
+Issuing a pass is a **separate per-row action** via
+[issue-pass-dialog.tsx](../src/features/patients/components/dialogs/issue-pass-dialog.tsx),
+distinct from create — the pass number comes back from the server, never typed.
+[watcher-dialog.tsx](../src/features/patients/components/dialogs/watcher-dialog.tsx)
+sources `relationship` from the reference lookup (see
+`WATCHER_RELATIONSHIP_DROPDOWN_PLAN.md`, ☑).
 
-### New types — `src/features/cases/types/watcher.types.ts`
+The tab is mounted on **both** the patient detail view
+([patient-detail-view.tsx:330](../src/features/patients/components/patient-detail-view.tsx#L330),
+`caseId={patient.latestCaseId}`) and the case detail page
+([case-detail-page.tsx:379](../src/features/cases/components/case-detail-page.tsx#L379)).
 
-Finally populates the empty `features/cases/types/` scaffold — this is the
-first thing to live there.
+### Phase 8 — requirement banner, waiver, optimistic guard ☑
 
-```ts
-export interface CaseWatcher {
-  id: string
-  caseId: string
-  patientWatcherId: string | null
-  fullName: string
-  relationship: string
-  contactNo: string | null
-  address: string | null
-  isPrimary: boolean
-  isInformant: boolean
-  passNumber: string | null
-  passValidUntil: string | null
-  passStatus: "active" | "expired" | "revoked"
-  presentFrom: string | null
-  presentUntil: string | null
-  addedBy: { id: string; name: string } | null
-  notes: string | null
-}
-
-export type WatcherRequirement = "required" | "recommended" | "optional" | "waived"
-
-export interface WatcherStatus {
-  requirement: WatcherRequirement
-  hasPrimary: boolean
-  satisfied: boolean
-  blocking: boolean
-}
-
-export interface WatcherRelationshipType {
-  id: string
-  name: string
-  code: string
-}
-```
-
-`src/features/cases/types/api.types.ts` — the raw server shapes, matching
-`CaseWatcherResource` / `WatcherRequirementService::status()` /
-`WatcherRelationshipTypeResource` field-for-field:
-
-```ts
-export interface ApiCaseWatcher {
-  id: number
-  case_id: number
-  patient_watcher_id: number | null
-  name: string
-  relationship: string
-  contact_number: string | null
-  address: string | null
-  is_primary: boolean
-  is_informant: boolean
-  pass_number: string | null
-  pass_valid_until: string | null
-  pass_status: string
-  present_from: string | null
-  present_until: string | null
-  added_by?: { id: number; name: string } | null
-  notes: string | null
-  created_at: string
-  updated_at: string
-}
-
-export interface ApiWatcherStatus {
-  requirement: string
-  has_primary: boolean
-  satisfied: boolean
-  blocking: boolean
-}
-
-export interface ApiWatcherRelationshipType {
-  id: number
-  name: string
-  code: string
-  created_at: string
-  updated_at: string
-}
-```
-
-The 422 body a blocked transition returns (`errors.watcher`, `watcher_status`)
-also needs a spot in the shared API error type — wherever
-`ApiValidationError` (or equivalent) already lives; check `lib/api-client.ts`
-for the existing shape before adding a new one.
-
-### API — `src/features/cases/api/case-watchers-api.ts`
-
-One function per server endpoint from `docs/WATCHER_LOGIC_PLAN.md` §6 on the
-server (all nine already shipped):
-
-```ts
-listCaseWatchers(caseId)              // GET  cases/{case}/watchers
-getWatcherStatus(caseId)              // GET  cases/{case}/watcher-status
-createCaseWatcher(caseId, payload)    // POST cases/{case}/watchers
-updateCaseWatcher(watcherId, payload) // PUT  case-watchers/{caseWatcher}
-deleteCaseWatcher(watcherId)          // DELETE case-watchers/{caseWatcher}
-promoteCaseWatcher(watcherId)         // POST case-watchers/{caseWatcher}/promote
-issueWatcherPass(watcherId, payload)  // POST case-watchers/{caseWatcher}/issue-pass
-revokeWatcherPass(watcherId)          // POST case-watchers/{caseWatcher}/revoke-pass
-storeWatcherWaiver(caseId, payload)   // POST cases/{case}/watcher-waiver
-destroyWatcherWaiver(caseId)          // DELETE cases/{case}/watcher-waiver
-```
-
-Same `apiClient` / `ApiEnvelope` shape as every function in `patients-api.ts`
-— no new HTTP conventions needed. `createCaseWatcher`'s payload accepts
-either `{ patient_watcher_id }` or the full inline-person fields, matching
-`StoreCaseWatcherRequest` on the server exactly.
-
-`src/features/cases/api/case-watchers-adapter.ts` — `toCaseWatcher()`,
-`toWatcherStatus()`, in the style of `toWatcher()` in `patients-adapter.ts`.
-
-### Reference lookup — `src/features/reference/api/watcher-relationship-types-api.ts`
-
-Also the first file in that empty scaffold. One function:
-`listWatcherRelationshipTypes()` → `GET /watcher-relationship-types`. Feeds
-the relationship `Select` in Phase 7's dialog.
-
-### Hooks — `src/features/cases/hooks/`
-
-`use-case-watchers.ts` (list + status, `["cases", caseId, "watchers"]` /
-`["cases", caseId, "watcher-status"]`) and `use-case-watcher-mutations.ts`
-(create/update/delete/promote/issue-pass/revoke-pass/waiver), all
-invalidating both query keys plus `patientDetailKeys(patientId).latestCase`
-(from `use-patient-detail.ts`) on every write — the patient view's "current
-case" data and the case-watchers data must never disagree, and right now
-they're read through two completely different hooks.
-
-**Gate:** `npx tsc --noEmit`.
-
-**Revert:** safe — nothing calls any of this yet.
+- **Banner** — [watcher-status-banner.tsx](../src/features/patients/components/watcher-status-banner.tsx),
+  mounted above the tabs in the patient detail view
+  ([patient-detail-view.tsx:207](../src/features/patients/components/patient-detail-view.tsx#L207)),
+  driven by `useWatcherStatus`. Renders the destructive/warning/muted variants
+  per `requirement` × `hasPrimary`, including the "waived by X on Y" copy now that
+  the server exposes the resolved `waiver` block.
+- **Waiver dialog** — [watcher-waiver-dialog.tsx](../src/features/patients/components/dialogs/watcher-waiver-dialog.tsx),
+  gated on `usePermission("cases.waive_watcher")`, with the six reason values and
+  a required note when `other`.
+- **Optimistic guard** — [intake-sheet-tab.tsx](../src/features/patients/components/tabs/intake-sheet-tab.tsx)
+  disables Submit/Finalize with a tooltip when `watcherStatus.blocking` is true;
+  the server 422 remains the real gate.
 
 ---
 
-## 3. Phase 7 — Watchers UI goes case-scoped ☐
+## Phase 9 — "Missing watcher" worklist filter ☐ blocked
 
-The substance of "move from patient to case" (server §8), without the page
-move that doesn't have anywhere to go yet (see §1). The tab stays where it
-is in `patient-detail-view.tsx`; what it reads and writes changes.
+The one piece of the original plan that was never built, and correctly so.
 
-- **Resolve the case first.** The tab needs a `caseId` before it can call any
-  Phase 6 hook — reuse `getLatestCaseForPatient` (already fetched by
-  `usePatientDetail`) rather than adding a second lookup. If there's no case
-  yet (a patient with no admission on file), the tab should say so rather
-  than 404 against `undefined`.
-- **`watcher.types.ts`** (patients feature) — replace `Watcher` with a
-  re-export of `CaseWatcher` from `features/cases/types`, or delete it and
-  update `PatientRecord.watchers: Watcher[]` to point at the new type
-  directly. Check every import of the old `Watcher` type before deleting it
-  — `patients-adapter.ts` and `watchers-tab.tsx` at minimum.
-- **`watchers-tab.tsx`** — reads case watchers via the Phase 6 hook instead
-  of `patient.watchers`. Table gains a Role column (Primary / Informant
-  badges) and real Pass No. / Valid Until / Status instead of the current
-  placeholder strings. Actions per row: Promote to primary, Edit, Issue
-  Pass / Revoke Pass, Remove.
-- **`watcher-dialog.tsx`** — currently a 3-field form (`fullName`,
-  `relationship` as free-text `Input`, `contactNo`) that only ever creates a
-  patient-scoped watcher. Needs:
-  - A **directory picker** at the top — "Select from known contacts," listing
-    the patient's own `patient_watchers` (already on `PatientRecord.watchers`
-    via the existing profile fetch — no new request). Selecting one
-    pre-fills the form and sends `patient_watcher_id`; leaving it on "new
-    person" sends the inline fields instead, matching
-    `CaseWatcherService::create()`'s two paths on the server.
-  - `relationship` becomes a `Select` sourced from
-    `listWatcherRelationshipTypes()` (Phase 6), not free text — the server
-    now 422s an unrecognised value, so a free-text input would just produce
-    a wall of rejected submits.
-  - `isPrimary` / `isInformant` switches, optional `presentFrom` /
-    `presentUntil` date fields.
-  - The dialog's `onIssueWatcherPass` callback and its name are both
-    residue of the old single-purpose "issue a pass" flow — this dialog now
-    creates a watcher; issuing a pass is its own action per row (below), so
-    rename the prop and stop conflating the two.
-- **Issuing a pass** is a separate action, not part of create — matches the
-  server's `POST case-watchers/{caseWatcher}/issue-pass` being a distinct
-  endpoint from `store`. The button and copy in `watchers-tab.tsx` ("Issue
-  Watcher Pass") currently sit on the *create* action; after this phase that
-  copy belongs on a per-row action instead, and the header button becomes a
-  plain "Add Watcher."
-- **Known contacts, deferred.** The server plan's "read-only Known Contacts
-  list on the patient view" doesn't have a natural home without a real
-  patient-vs-case UI split, which doesn't exist yet (§1). Skipped for this
-  phase; the directory picker above covers the only place that data is
-  actually needed right now.
+The intent: a "Missing watcher" filter on the patient sidebar (or the caseload
+screen) surfacing every case where `watcher_status.blocking` is true — the view a
+section head would live in.
 
-**Gate:** `tsc`, `npm run build`, then a manual pass: add an inline watcher,
-add one via the directory picker, promote a different one to primary and
-confirm the first is demoted, issue a pass and confirm the number renders,
-revoke it, remove a non-primary watcher, and confirm removing the last
-primary on an inpatient case surfaces the server's 422 message rather than a
-generic error toast.
+**Why it is blocked.** There is no server-side filter for this. The client
+sidebar filters are server-driven (`API_CONTRACT_SYNC_PLAN.md` Phase 7, shipped),
+so a client-side `useMemo` over one page would silently mean "blocking within this
+page" — worse than no filter. A correct implementation needs a server addition
+first: a `whereDoesntHave(...)` + admission-type scope exposed as
+`?watcher_blocking=1` on `GET /patients` (or, better, on `GET /my-caseload`,
+which is the more natural home now that a caseload screen exists). The server's
+own `WATCHER_LOGIC_PLAN.md` §8 flags this as a **cross-repo dependency that was
+never scoped into a server phase**.
 
-**Revert:** moderate surface (one tab, one dialog, one type file) — keep in
-its own commit, separate from Phase 6.
+**Do not build this client-side.** Raise the server filter first; then this phase
+is a small addition to `caseload-page.tsx`'s bucket/filter bar.
 
 ---
 
-## 4. Phase 8 — Requirement banner, waiver dialog, worklist filter ☐
+## Open items / tech debt
 
-Independent of Phase 7's UI details, but needs Phase 6's `WatcherStatus`
-type and `getWatcherStatus`/waiver hooks to exist first.
-
-### Banner
-
-Placed above the tabs in `patient-detail-view.tsx` (there's no case-detail
-page to put it on top of instead — see §1), driven by
-`useWatcherStatus(caseId)`:
-
-| requirement | hasPrimary | Banner |
-|---|---|---|
-| `required` | false | destructive — "This inpatient case requires a registered watcher. Some actions are blocked until one is added or a waiver is filed." |
-| `required` | true | none |
-| `recommended` | false | warning — "No watcher recorded. Recommended for ER cases." |
-| `optional` | either | none |
-| `waived` | either | muted — reason + who waived it + when, once the waiver payload exposes that (confirm `StoreWatcherWaiverController`'s response carries `watcher_waived_by`/`watcher_waived_at` in a client-friendly shape — today `CaseModelResource` only exposes the raw `watcher_waiver_reason` etc. columns, not a resolved actor name). |
-
-Copy in the "required, not satisfied" row above is softened from the
-server-doc original ("blocked until...") to "some actions," since — per §1
-— only Submit/Finalize Intake are real buttons today; close-case and
-approve-assistance enforcement exists server-side with no client button yet
-to guard.
-
-### Waiver dialog
-
-Visible only when `usePermission("cases.waive_watcher")` is true (the hook
-already exists, `features/auth/hooks/use-permission.ts` — this is a
-one-line gate, not new plumbing). Reason `Select` with the six values
-`StoreWatcherWaiverRequest` validates (`unidentified_patient`, `abandoned`,
-`unaccompanied`, `patient_refused`, `under_protective_custody`, `other`),
-required free-text note when `other`, confirm step. Filing one clears the
-destructive banner immediately (invalidate the status query).
-
-### Optimistic guard
-
-`useSubmitIntakeSheet` / `useFinalizeIntakeSheet`'s trigger buttons
-(`intake-sheet-tab.tsx`) render `disabled` with a tooltip when
-`watcherStatus.blocking` is true, rather than letting the user hit the
-server's 422. The 422 handler stays as the real gate regardless — the
-banner's cached status can be stale (another tab just removed the primary
-watcher, etc.) — so this is a UX nicety, not the actual enforcement, which
-the server already owns end to end.
-
-### Worklist filter
-
-A "Missing watcher" filter on the patient sidebar. **Depends on
-`API_CONTRACT_SYNC_PLAN.md`'s client Phase 7** (server-driven sidebar
-filters) landing first — the sidebar's current filtering is a client-side
-`useMemo` over already-fetched rows, and there is no
-`?watcher_blocking=1`-style filter on `GET /patients` today (nor is one
-planned in the server's sync plan). If this filter is wanted, it needs a
-small server-side addition first: a `whereDoesntHave('latestAssessment', …)`
-+ admission-type scope on `PatientRepository`, in the same shape as the
-`classification`/`intake_date` filters the server sync plan's Phase 4
-already added. **Flagging as a cross-repo dependency rather than scoping it
-into this phase** — confirm with the server side before committing to it.
-
-**Gate:** log in as a role without `cases.waive_watcher` (e.g. Case Manager)
-and confirm the waiver dialog trigger is absent; as `MSS Head` and confirm
-it appears. Open an inpatient case with no watcher and confirm the
-destructive banner and disabled Submit/Finalize buttons; add a watcher and
-confirm both clear; remove it and file a waiver instead, confirm the muted
-banner. Open an OPD case and confirm no banner at all.
-
-**Revert:** safe — the banner and dialog are additive; the guard only
-disables buttons, it doesn't change what they do when enabled.
+- **Patient-view Watchers tab is not the "Known contacts directory" the server
+  plan imagined.** Server §8 sketched the patient-view tab becoming a read-only
+  directory once a case page existed. Instead, the full case-scoped tab renders in
+  both places against `patient.latestCaseId`. Harmless, but it means "watchers are
+  per-episode" is implied rather than shown on the patient view. Decide whether
+  the patient-view copy becomes the read-only directory now that `/cases/:id`
+  hosts the real per-episode tab.
+- **`as any` cast into `WatchersTab`.** [case-detail-page.tsx:379](../src/features/cases/components/case-detail-page.tsx#L379)
+  passes `caseRecord.patient as any`. Same root cause and fix as the SCSR tab —
+  tighten the prop to what the tab reads. Tracked in `SOCIAL_CASE_PLAN.md`.
+- **`is_incapacitated` capture.** The resolver reads it, but nothing in intake
+  sets it (server open item §10). If MSS wants to drive the "Required" resolution
+  for an incapacitated adult, intake needs a field for it — a client change.
+- **Pass number series** is the server's placeholder `PASS-{year}-{seq}`; if
+  guarantee letters later share a series, the display is unaffected but worth
+  knowing.
 
 ---
 
-## 5. Verification
+## Verification
 
-No test runner in this repo (per `CLAUDE.md`) — per-phase gates above are
-`tsc --noEmit` plus the manual walkthroughs described. Full pass before
-calling this plan done: `npm run build`, then walk through Phase 7 and
-Phase 8's manual gates back to back on one inpatient case and one OPD case.
-
-## Commit boundaries
-
-Phase 6 on its own (no visible change, safe to land alone). Phase 7 on its
-own. Phase 8's banner+waiver together, worklist filter held out as its own
-follow-up once the server-side dependency above is resolved — four commits,
-not three.
-
-## Open items
-
-- **Waiver actor display.** Confirm whether `CaseModelResource` should
-  expose a resolved `watcher_waived_by` name (not just the raw user id) for
-  the "waived by X" banner copy above — small server-side addition if not.
-- **`AdmissionStatus`/`Gender`/`CivilStatus` are all plain `string`** in
-  `patient.types.ts` because the server doesn't enforce an enum either. Same
-  will be true of the new `relationship` field on `CaseWatcher` at the
-  *type* level, even though the UI constrains it to a `Select` sourced from
-  the reference lookup — don't tighten it to a union that could drift from
-  the seeded master list.
-- **Cross-plan sequencing with `API_CONTRACT_SYNC_PLAN.md`.** Both plans
-  touch `patients-adapter.ts` and `patient-detail-view.tsx`. Worth deciding
-  which lands first, or doing them in the same sitting, to avoid two people
-  independently reshaping the same adapter function in parallel branches.
-- **Whether a real case-detail page is coming.** If one gets scoped
-  separately, everything in Phase 6/7 here should port over close to
-  as-is — the data layer is already case-scoped by then, only the
-  component's location changes.
+No test runner in this repo. Gate for any further work: `npx tsc -b` and
+`npm run lint` clean (**not** `npm run typecheck`, which excludes `src/`), then a
+manual walkthrough on one inpatient case and one OPD case — banner states, add /
+promote / issue-pass / revoke / remove, waiver filing clears the destructive
+banner, disabled Submit/Finalize when blocking.
