@@ -16,7 +16,7 @@ export function toSocialCase(raw: ApiSocialCase): SocialCase {
     id: raw.id,
     caseId: raw.case_id,
     socialCaseNo: raw.social_case_no,
-    status: raw.status,
+    status: raw.status ?? "draft",
     revision: raw.revision ?? 1,
     classification: raw.classification ?? "Indigent",
     totalFamilyIncome: raw.total_family_income != null ? Number(raw.total_family_income) : null,
@@ -57,10 +57,10 @@ export function toSocialCase(raw: ApiSocialCase): SocialCase {
     // PDF Document
     latestDocument: raw.latest_document
       ? {
-          id: raw.latest_document.id,
-          fileName: raw.latest_document.file_name,
-          filePath: raw.latest_document.file_path,
-        }
+        id: raw.latest_document.id,
+        fileName: raw.latest_document.file_name,
+        filePath: raw.latest_document.file_path,
+      }
       : null,
   }
 }

@@ -18,6 +18,8 @@ import {
   usePromoteAssessmentToSocialCase,
 } from "@/features/cases/hooks/use-assessment"
 import { downloadSocialCasePdf } from "@/features/cases/api/social-case-api"
+import { useCase } from "@/features/cases/hooks/use-cases"
+import { SocialCaseContextHeader } from "@/features/cases/components/social-case-context-header"
 import { SocialCaseEditor } from "@/features/cases/components/social-case-editor"
 import { SocialCaseSignoff } from "@/features/cases/components/social-case-signoff"
 import { AmendSocialCaseDialog } from "@/features/cases/components/dialogs/amend-social-case-dialog"
@@ -47,21 +49,32 @@ import {
 } from "lucide-react"
 
 interface SocialCaseTabProps {
-  patient: PatientRecord | any
-  caseId?: number
+  caseId?: number | null
+  patientId?: number
+  patientName?: string
   caseCode?: string
+  showCaseContext?: boolean
+  patient?: PatientRecord
 }
 
-export const SocialCaseTab: React.FC<SocialCaseTabProps> = ({ patient, caseId: propCaseId, caseCode: propCaseCode }) => {
+export const SocialCaseTab: React.FC<SocialCaseTabProps> = ({
+  caseId: propCaseId,
+  patientId: propPatientId,
+  caseCode: propCaseCode,
+  showCaseContext = true,
+  patient,
+}) => {
   const navigate = useNavigate()
-  const caseId = propCaseId ?? patient.latestCaseId
-  const caseCode = propCaseCode ?? patient.caseStudy?.caseNumber ?? (caseId ? `CASE-${caseId}` : "—")
-  const patientId = Number(patient.id)
+  const caseId = propCaseId ?? patient?.latestCaseId ?? null
+  const patientId = propPatientId ?? (patient ? Number(patient.id) : 0)
 
   const canViewCases = usePermission("cases.view")
   const canCreateCase = usePermission("cases.create")
   const canUpdateCase = usePermission("cases.update")
   const canFinalizeCase = usePermission("cases.finalize_social_case")
+
+  const { data: caseRecord } = useCase(caseId)
+  const caseCode = propCaseCode ?? caseRecord?.caseCode ?? patient?.caseStudy?.caseNumber ?? (caseId ? `CASE-${caseId}` : "—")
 
   const { data: socialCase, isLoading, error } = useSocialCase(caseId)
   const { data: latestAssessment } = useLatestAssessment(caseId)
@@ -140,6 +153,16 @@ export const SocialCaseTab: React.FC<SocialCaseTabProps> = ({ patient, caseId: p
     )
   }
 
+  const getErrorMessage = (err: unknown, fallback: string) => {
+    if (typeof err === "object" && err !== null) {
+      const responseMessage = (err as { response?: { data?: { message?: string } } }).response?.data?.message
+      if (responseMessage) return responseMessage
+      const errorMsg = (err as Error).message
+      if (errorMsg) return errorMsg
+    }
+    return fallback
+  }
+
   // 2. State 2: No SCSR Yet (data === null)
   if (!socialCase) {
     const handleStart = async () => {
@@ -150,13 +173,16 @@ export const SocialCaseTab: React.FC<SocialCaseTabProps> = ({ patient, caseId: p
         } else {
           await startMutation.mutateAsync({})
         }
-      } catch (err: any) {
-        setActionError(err?.response?.data?.message || err?.message || "Failed to start Social Case Study Report.")
+      } catch (err: unknown) {
+        setActionError(getErrorMessage(err, "Failed to start Social Case Study Report."))
       }
     }
 
     return (
       <div className="space-y-6">
+        {/* Case Context Header (shown on patient detail, suppressed on case detail) */}
+        {showCaseContext && caseRecord && <SocialCaseContextHeader caseRecord={caseRecord} />}
+
         {/* Active MSWD Classification Card */}
         {latestAssessment && <MswdClassificationCard assessment={latestAssessment} />}
 
@@ -245,10 +271,11 @@ export const SocialCaseTab: React.FC<SocialCaseTabProps> = ({ patient, caseId: p
   }
 
   // 3. State 3: SCSR Exists
+  const currentStatus = socialCase.status ?? "draft"
   const statusBadgeVariant =
-    socialCase.status === "finalized"
+    currentStatus === "finalized"
       ? "default"
-      : socialCase.status === "for_review"
+      : currentStatus === "for_review"
       ? "secondary"
       : "outline"
 
@@ -258,8 +285,8 @@ export const SocialCaseTab: React.FC<SocialCaseTabProps> = ({ patient, caseId: p
       await updateMutation.mutateAsync(formState)
       setIsEditing(false)
       setFormState({})
-    } catch (err: any) {
-      setActionError(err?.response?.data?.message || err?.message || "Failed to save SCSR draft changes.")
+    } catch (err: unknown) {
+      setActionError(getErrorMessage(err, "Failed to save SCSR draft changes."))
     }
   }
 
@@ -272,8 +299,8 @@ export const SocialCaseTab: React.FC<SocialCaseTabProps> = ({ patient, caseId: p
       await submitMutation.mutateAsync()
       setIsEditing(false)
       setFormState({})
-    } catch (err: any) {
-      setActionError(err?.response?.data?.message || err?.message || "Failed to submit SCSR for review.")
+    } catch (err: unknown) {
+      setActionError(getErrorMessage(err, "Failed to submit SCSR for review."))
     }
   }
 
@@ -286,9 +313,8 @@ export const SocialCaseTab: React.FC<SocialCaseTabProps> = ({ patient, caseId: p
       await finalizeMutation.mutateAsync()
       setIsEditing(false)
       setFormState({})
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || "Failed to finalize Social Case Study Report."
-      setActionError(msg)
+    } catch (err: unknown) {
+      setActionError(getErrorMessage(err, "Failed to finalize Social Case Study Report."))
     }
   }
 
@@ -297,8 +323,8 @@ export const SocialCaseTab: React.FC<SocialCaseTabProps> = ({ patient, caseId: p
     try {
       await amendMutation.mutateAsync(reason)
       setIsEditing(true)
-    } catch (err: any) {
-      setActionError(err?.response?.data?.message || err?.message || "Failed to amend Social Case Study Report.")
+    } catch (err: unknown) {
+      setActionError(getErrorMessage(err, "Failed to amend Social Case Study Report."))
     }
   }
 
@@ -308,16 +334,18 @@ export const SocialCaseTab: React.FC<SocialCaseTabProps> = ({ patient, caseId: p
     try {
       const fileName = socialCase.latestDocument?.fileName || `${socialCase.socialCaseNo}.pdf`
       await downloadSocialCasePdf(socialCase.caseId, fileName)
-    } catch (err: any) {
-      setActionError(err?.response?.data?.message || err?.message || "Failed to download SCSR PDF.")
+    } catch (err: unknown) {
+      setActionError(getErrorMessage(err, "Failed to download SCSR PDF."))
     } finally {
       setIsDownloadingPdf(false)
     }
-
   }
 
   return (
     <div className="space-y-6">
+      {/* Case Context Header (shown on patient detail, suppressed on case detail) */}
+      {showCaseContext && caseRecord && <SocialCaseContextHeader caseRecord={caseRecord} />}
+
       {/* Active MSWD Classification Card */}
       {latestAssessment && <MswdClassificationCard assessment={latestAssessment} />}
 
@@ -330,8 +358,8 @@ export const SocialCaseTab: React.FC<SocialCaseTabProps> = ({ patient, caseId: p
                   Social Safety Net Case Study Report
                 </CardTitle>
                 <Badge variant={statusBadgeVariant} className="font-bold text-xs uppercase tracking-wider px-2.5 py-1">
-                  {socialCase.status === "finalized" && <CheckCircle className="w-3.5 h-3.5 mr-1 text-emerald-400" />}
-                  {socialCase.status.replace("_", " ")}
+                  {currentStatus === "finalized" && <CheckCircle className="w-3.5 h-3.5 mr-1 text-emerald-400" />}
+                  {currentStatus.replace("_", " ")}
                 </Badge>
 
                 {socialCase.revision > 1 && (

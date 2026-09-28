@@ -21,15 +21,17 @@ import { WatcherDialog } from "../dialogs/watcher-dialog"
 import { Ban, CheckCircle, Edit, MoreHorizontal, Plus, ShieldAlert, Star, Trash2 } from "lucide-react"
 
 interface WatchersTabProps {
-  patient: PatientRecord
-  caseId?: number
+  patient?: Partial<PatientRecord> | null
+  patientId?: number
+  caseId?: number | null
 }
 
-export const WatchersTab: React.FC<WatchersTabProps> = ({ patient, caseId }) => {
-  const { data: caseWatchers = [], isLoading } = useCaseWatchers(caseId)
+export const WatchersTab: React.FC<WatchersTabProps> = ({ patient, patientId: propPatientId, caseId }) => {
+  const patientId = propPatientId ?? (patient?.id ? Number(patient.id) : 0)
+  const { data: caseWatchers = [], isLoading } = useCaseWatchers(caseId ?? undefined)
   const mutations = useCaseWatcherMutations({
     caseId: caseId ?? 0,
-    patientId: Number(patient.id),
+    patientId: patientId,
   })
 
   const [isAddOpen, setIsAddOpen] = useState(false)

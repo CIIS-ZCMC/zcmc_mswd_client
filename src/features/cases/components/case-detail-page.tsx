@@ -404,15 +404,13 @@ export const CaseDetailPage: React.FC = () => {
           </TabsList>
 
           <TabsContent value="social-case">
-            {caseRecord.patient ? (
-              <SocialCaseTab
-                patient={caseRecord.patient as any}
-                caseId={caseRecord.id}
-                caseCode={caseRecord.caseCode}
-              />
-            ) : (
-              <div className="p-6 text-sm text-muted-foreground">Patient information unavailable.</div>
-            )}
+            <SocialCaseTab
+              caseId={caseRecord.id}
+              patientId={caseRecord.patientId}
+              patientName={caseRecord.patient?.fullName}
+              caseCode={caseRecord.caseCode}
+              showCaseContext={false}
+            />
           </TabsContent>
 
           <TabsContent value="progress-notes">
@@ -426,11 +424,11 @@ export const CaseDetailPage: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="watchers">
-            {caseRecord.patient ? (
-              <WatchersTab patient={caseRecord.patient as any} caseId={Number(caseId)} />
-            ) : (
-              <div className="p-6 text-sm text-muted-foreground">Patient information unavailable.</div>
-            )}
+            <WatchersTab
+              patient={caseRecord.patient}
+              patientId={caseRecord.patientId}
+              caseId={caseRecord.id}
+            />
           </TabsContent>
 
           <TabsContent value="activity">
