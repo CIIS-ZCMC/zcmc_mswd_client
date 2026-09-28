@@ -24,6 +24,7 @@ queue; C: progress notes / follow-ups; D: reporting + case-summary PDF).
 | F. Case route + caseload screen | B + routing | ☑ done — via `CASE_MODULE_PLAN.md` |
 | G. Progress notes + follow-ups UI | C | ☑ done |
 | H. Reporting dashboard + case-summary PDF | D | ☑ done |
+| I. SCSR case-context alignment + unify the two mounts | Case Module rewrite | ☑ done |
 
 ---
 
@@ -138,21 +139,98 @@ contains the SCSR narrative + interventions + progress notes.
 
 ---
 
+## Phase I — SCSR case-context alignment + unify the two mounts ☐
+
+**Gate:** the Case Module rewrite (server #151/#152 + `CASE_MODULE_PLAN.md`) —
+shipped. `CaseRecord` already carries every rewrite field (`cardColor`,
+`transactionId`, `transactionType`, `caseType`, `admissionType`, `createdByUser`).
+
+**Why.** The rewrite's case fields surface only on the `/cases/:id` **page
+header** ([case-detail-page.tsx](../src/features/cases/components/case-detail-page.tsx)
+lines ~174–277). The shared `SocialCaseTab` shows none of that context, so under
+the **patient-detail** `social-case` tab a worker sees the SCSR with no case
+episode context at all — no card colour, no Case Type / Admission Type, no HIS
+encounter, no opened-by. The tab is also mounted twice and, on the case page, is
+fed `caseRecord.patient as any` (a strict-config hole) and otherwise leans on
+`patient.latestCaseId`. This phase gives the SCSR its case context and collapses
+the two mounts onto one honest contract — resolving the two open items below.
+
+### I.1 — Tighten `SocialCaseTab` props (kill the `as any`)
+Replace `patient: PatientRecord | any` with an explicit, minimal contract:
+- `caseId: number | null`, `patientId: number`, `showCaseContext?: boolean`
+  (default `true`).
+The tab stops reading `patient.latestCaseId` / `patient.caseStudy`; callers pass
+`caseId` directly. Anything the empty/loading states need (a patient name) comes
+from the fetched case or a small explicit prop — not a whole `PatientRecord`.
+
+### I.2 — Case-context header (the alignment)
+The tab fetches its own case via the existing `useCase(caseId)`
+([use-cases.ts:66](../src/features/cases/hooks/use-cases.ts#L66), `caseKeys.detail`,
+`cases.view`-gated) and renders a new presentational
+`src/features/cases/components/social-case-context-header.tsx` showing, all
+**read-only**:
+- card-colour accent + label via `getCardColorConfig`
+  ([lib/case-card-color.ts](../src/features/cases/lib/case-card-color.ts)) — reuse,
+  do not re-map;
+- **Case Type** and **Admission Type** as plain text (never a dropdown, never
+  editable — they are supplied by the hospital encounter, per the Case Module
+  rewrite rule);
+- HIS **Encounter #** (`transactionId`) + `transactionType`;
+- status / priority badges, **opened-by** (`createdByUser`) and assigned-to.
+
+Mirror the visual language already in the case-detail page header so the two
+read identically.
+
+### I.3 — Unify the two mounts
+- **Patient detail** ([tabs/social-case-tab.tsx](../src/features/patients/components/tabs/social-case-tab.tsx),
+  mounted at [patient-detail-view.tsx:338](../src/features/patients/components/patient-detail-view.tsx#L338)):
+  `<SocialCaseTab caseId={patient.latestCaseId} patientId={Number(patient.id)} />`
+  — context header **shown** (this surface has no case header of its own).
+- **Case detail** ([case-detail-page.tsx:408](../src/features/cases/components/case-detail-page.tsx#L408)):
+  `<SocialCaseTab caseId={Number(caseId)} patientId={caseRecord.patientId} showCaseContext={false} />`
+  — the page header already shows the case context, so the tab suppresses its own
+  to avoid a duplicate. Drops `caseRecord.patient as any`.
+
+One component, one data source (`useCase` + `useSocialCase`), context shown only
+where the surrounding page doesn't already provide it.
+
+### I.4 — Enforce read-only Case/Admission Type
+Case Type and Admission Type must not be editable from the SCSR surface. Confirm
+the case-update path used around the SCSR (`UpdateCasePayload`) never sends
+`case_type` / `admission_type` from here; `card_color` stays editable, but on the
+**case-detail header** (its current home), not inside the SCSR tab. No new server
+calls; no server changes.
+
+### I.5 — Verification
+- `npm run typecheck` (the `as any` removal must compile under strict
+  `noUnusedLocals`/`erasableSyntaxOnly`) + `npm run lint`.
+- Manual, `npm run dev` against the API:
+  - Patient tab → `?tab=social-case`: the SCSR now shows the case-context header
+    (card colour, read-only Case/Admission Type, HIS encounter, opened-by) above
+    the three-state SCSR body.
+  - `/cases/:id` → SCSR tab: **no** second context header (page header covers it);
+    the SCSR body is identical to the patient-tab view.
+  - Case Type / Admission Type are read-only in both; card colour still editable
+    from the case header; finalize/amend/PDF flows unchanged.
+
+**Blast radius.** One new presentational component, a prop change on
+`SocialCaseTab`, two call-site updates. No API, adapter, or hook changes beyond
+consuming the existing `useCase`.
+
+---
+
 ## Open items / tech debt
 
 - **Duplicate SCSR mounting.** `SocialCaseTab` and `WatchersTab` render both on
-  the patient detail view and on the case detail page. This is harmless (same
-  data, same case id) but means two entry points to maintain. The server plan's
-  original intent was case-scoped screens; now that `/cases/:id` exists, decide
-  whether the patient-view copies become redirects/read-only summaries or stay.
-  Not urgent — flagged so the redundancy is a decision, not an accident.
-- **`as any` casts in case-detail-page.** [case-detail-page.tsx:365](../src/features/cases/components/case-detail-page.tsx#L365)
-  passes `caseRecord.patient as any` into `SocialCaseTab` and `WatchersTab`,
-  because those tabs take a full `PatientRecord` but the case profile carries a
-  lighter patient shape. Tighten the tab props to what they actually read (an id
-  + `caseStudy.caseNumber` + `watchers`), or have the case page fetch the real
-  `PatientRecord`. Currently a compile hole the strict config would otherwise
-  catch.
+  the patient detail view and on the case detail page. **Phase I resolves this
+  for the SCSR** — one component, context shown only where the page lacks its own
+  header. `WatchersTab` still carries the same redundancy and the same `as any`;
+  fold it into Phase I or a follow-up using the same pattern.
+- **`as any` casts in case-detail-page.** [case-detail-page.tsx:409](../src/features/cases/components/case-detail-page.tsx#L409)
+  passes `caseRecord.patient as any` into `SocialCaseTab` (and `WatchersTab`).
+  **Phase I removes it for `SocialCaseTab`** by tightening props to
+  `caseId` + `patientId`; the `WatchersTab` cast (line ~430) remains until it gets
+  the same treatment.
 - **P4 — the intake watcher gap** still lands here as a finalize 422. Intake
   `watchers[]` sync onto `patient_watchers`, but the finalize gate reads
   `case_watchers`. The tab's error handling makes the message comprehensible; the

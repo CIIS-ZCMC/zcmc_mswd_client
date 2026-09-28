@@ -27,7 +27,7 @@ import type { CreateCaseWatcherPayload, UpdateCaseWatcherPayload } from "@/featu
 interface WatcherDialogProps {
   isOpen: boolean
   onClose: () => void
-  patient: PatientRecord
+  patient?: Partial<PatientRecord> | null
   editingWatcher?: CaseWatcher | null
   onSave: (
     payload: CreateCaseWatcherPayload | UpdateCaseWatcherPayload,
@@ -61,7 +61,7 @@ export const WatcherDialog: React.FC<WatcherDialogProps> = ({
   })
 
   // Known contacts from patient record
-  const knownContacts = patient.watchers ?? []
+  const knownContacts = patient?.watchers ?? []
 
   const [prevSyncKey, setPrevSyncKey] = useState<string | null>(null)
   const currentSyncKey = `${editingWatcher?.id ?? "new"}-${isOpen}-${relationshipTypes.length}`

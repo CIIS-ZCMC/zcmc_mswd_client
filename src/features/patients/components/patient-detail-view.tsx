@@ -327,7 +327,7 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
           </TabsContent>
 
           <TabsContent value="watchers">
-            <WatchersTab patient={patient} caseId={patient.latestCaseId} />
+            <WatchersTab patient={patient} patientId={Number(patient.id)} caseId={patient.latestCaseId} />
           </TabsContent>
 
           <TabsContent value="caretake">
@@ -335,7 +335,12 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
           </TabsContent>
 
           <TabsContent value="social-case">
-            <SocialCaseTab patient={patient} />
+            <SocialCaseTab
+              caseId={patient.latestCaseId}
+              patientId={Number(patient.id)}
+              patientName={patient.fullName}
+              showCaseContext={true}
+            />
           </TabsContent>
 
           <TabsContent value="hospital-encounters">

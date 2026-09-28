@@ -21,17 +21,17 @@ export async function getCaseAssessments(caseId: number): Promise<Assessment[]> 
   return rawData.map(adaptAssessment)
 }
 
-/** GET /cases/{case}/assessment/latest — fetches latest active assessment for a case episode */
+/**
+ * The latest assessment for a case episode, or null when it has none.
+ *
+ * There is no `/cases/{case}/assessment/latest` route on the server — calling it
+ * 404s. GET /cases/{case}/assessments already returns the case's assessments
+ * newest-first (the controller uses `->latest()`), so the head of that list is
+ * the latest. Reuse it rather than hitting a nonexistent endpoint.
+ */
 export async function getLatestAssessment(caseId: number): Promise<Assessment | null> {
-  return apiClient
-    .get<ApiEnvelope<ApiAssessment>>(`/cases/${caseId}/assessment/latest`)
-    .then((res) => adaptAssessment(res.data))
-    .catch((err: any) => {
-      if (err?.status === 404 || err?.response?.status === 404) {
-        return null
-      }
-      throw err
-    })
+  const assessments = await getCaseAssessments(caseId)
+  return assessments[0] ?? null
 }
 
 /** POST /cases/{case}/reassess — creates a new linked re-assessment snapshot */
