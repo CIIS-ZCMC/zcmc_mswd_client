@@ -2,56 +2,19 @@ import React from "react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import type { Assessment, MswdClassificationCode } from "../types/assessment.types"
+import type { Assessment } from "../types/assessment.types"
+import {
+  formatCurrency,
+  getBracketColor,
+  getBracketLabel,
+  getClassificationBadgeText,
+} from "../lib/classification"
 import { AlertTriangle, Calculator, DollarSign, Info, ShieldAlert, Users } from "lucide-react"
 
 
 interface MswdClassificationCardProps {
   assessment: Assessment
   className?: string
-}
-
-export const getBracketColor = (code: MswdClassificationCode | string) => {
-  switch (code) {
-    case "A":
-      return "bg-slate-700 hover:bg-slate-800 text-white border-slate-600"
-    case "B":
-      return "bg-blue-600 hover:bg-blue-700 text-white border-blue-500"
-    case "C1":
-      return "bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-500"
-    case "C2":
-      return "bg-purple-600 hover:bg-purple-700 text-white border-purple-500"
-    case "C3":
-      return "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500"
-    case "D":
-      return "bg-teal-600 hover:bg-teal-700 text-white border-teal-500"
-    default:
-      return "bg-slate-600 text-white"
-  }
-}
-
-export const getBracketLabel = (code: MswdClassificationCode | string) => {
-  switch (code) {
-    case "A":
-      return "Class A — Full Pay"
-    case "B":
-      return "Class B — Partial Pay (25% Discount)"
-    case "C1":
-      return "Class C1 — Partial Pay (50% Discount)"
-    case "C2":
-      return "Class C2 — Partial Pay (75% Discount)"
-    case "C3":
-      return "Class C3 — Financially Indigent (100% Discount)"
-    case "D":
-      return "Class D — Financially Indigent / Support (100% Discount)"
-    default:
-      return `Class ${code}`
-  }
-}
-
-export const formatCurrency = (val: number | null | undefined) => {
-  if (val === null || val === undefined) return "₱0.00"
-  return `₱${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 export const MswdClassificationCard: React.FC<MswdClassificationCardProps> = ({
@@ -81,7 +44,7 @@ export const MswdClassificationCard: React.FC<MswdClassificationCardProps> = ({
                 classification
               )}`}
             >
-              Class {classification}
+              {getClassificationBadgeText(classification)}
             </Badge>
             <div>
               <CardTitle className="text-sm font-bold text-foreground">
@@ -116,7 +79,7 @@ export const MswdClassificationCard: React.FC<MswdClassificationCardProps> = ({
             <AlertDescription className="text-xs mt-1 leading-relaxed">
               Calculated bracket by net per capita income was{" "}
               <strong className="font-bold underline">Class {calculatedClassification || "N/A"}</strong>, but social worker manually overrode classification to{" "}
-              <strong className="font-bold underline">Class {classification}</strong>.
+              <strong className="font-bold underline">{getClassificationBadgeText(classification)}</strong>.
               {classificationOverrideReason && (
                 <div className="mt-1 pt-1 border-t border-amber-500/20 text-xs italic">
                   Justification: "{classificationOverrideReason}"

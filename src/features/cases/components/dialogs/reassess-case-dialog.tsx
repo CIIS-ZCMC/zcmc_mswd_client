@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useMswdClassificationMatrix, useReassessCase } from "../../hooks/use-assessment"
 import type { Assessment, MswdClassificationCode, ReassessmentPayload } from "../../types/assessment.types"
-import { formatCurrency, getBracketColor, getBracketLabel } from "../mswd-classification-card"
+import { formatCurrency, getBracketColor, getBracketLabel } from "../../lib/classification"
 import { AlertCircle, AlertTriangle, Calculator, Loader2, Plus, Trash2 } from "lucide-react"
 
 interface ReassessCaseDialogProps {

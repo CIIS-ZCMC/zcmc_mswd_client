@@ -2,7 +2,11 @@ import React from "react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { Assessment } from "../types/assessment.types"
-import { formatCurrency, getBracketColor } from "./mswd-classification-card"
+import {
+  formatCurrency,
+  getBracketColor,
+  getClassificationBadgeText,
+} from "../lib/classification"
 import { ArrowRight, Calendar, GitMerge, ShieldAlert, User } from "lucide-react"
 
 
@@ -55,7 +59,7 @@ export const AssessmentHistoryTimeline: React.FC<AssessmentHistoryTimelineProps>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/50 pb-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge className={`text-xs font-bold px-2.5 py-0.5 ${getBracketColor(item.classification)}`}>
-                        Class {item.classification}
+                        {getClassificationBadgeText(item.classification)}
                       </Badge>
 
                       {isInitial ? (
@@ -94,11 +98,11 @@ export const AssessmentHistoryTimeline: React.FC<AssessmentHistoryTimelineProps>
                     <div className="text-xs bg-muted/40 p-2 rounded-lg border border-border/40 flex items-center gap-2 text-foreground font-medium">
                       <span>Shifted from</span>
                       <Badge variant="outline" className="text-[10px] font-bold">
-                        Class {parentItem.classification}
+                        {getClassificationBadgeText(parentItem.classification)}
                       </Badge>
                       <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
                       <Badge className={`text-[10px] font-bold ${getBracketColor(item.classification)}`}>
-                        Class {item.classification}
+                        {getClassificationBadgeText(item.classification)}
                       </Badge>
                       <span className="text-muted-foreground text-[11px] font-mono ml-auto">
                         (Parent Snapshot #{parentItem.id})

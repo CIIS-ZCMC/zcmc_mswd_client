@@ -183,7 +183,7 @@ export const EncounterUisPanel: React.FC<EncounterUisPanelProps> = ({
                       <TableCell className="font-medium text-foreground">
                         <span className="flex items-center gap-1.5">
                           <User className="size-3.5 text-muted-foreground" />
-                          {log.printed_by?.name ?? `Worker #${log.printed_by_id ?? "—"}`}
+                          {log.printed_by?.name ?? "—"}
                         </span>
                       </TableCell>
                       <TableCell className="text-muted-foreground font-mono">
