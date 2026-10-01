@@ -86,8 +86,8 @@ export const WatcherDialog: React.FC<WatcherDialogProps> = ({
       setFormData({
         name: "",
         relationship: relationshipTypes[0]?.name || "Spouse",
-        contactNumber: patient.contactNo || "",
-        address: patient.address || "",
+        contactNumber: patient?.contactNo || "",
+        address: patient?.address || "",
         isPrimary: false,
         isInformant: false,
         presentFrom: "",
@@ -104,8 +104,8 @@ export const WatcherDialog: React.FC<WatcherDialogProps> = ({
       setFormData((prev) => ({
         ...prev,
         name: "",
-        contactNumber: patient.contactNo || "",
-        address: patient.address || "",
+        contactNumber: patient?.contactNo || "",
+        address: patient?.address || "",
       }))
     } else {
       const match = knownContacts.find((c) => String(c.id) === contactId)

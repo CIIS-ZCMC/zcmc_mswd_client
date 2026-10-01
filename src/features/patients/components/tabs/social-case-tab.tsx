@@ -65,7 +65,7 @@ export const SocialCaseTab: React.FC<SocialCaseTabProps> = ({
   patient,
 }) => {
   const navigate = useNavigate()
-  const caseId = propCaseId ?? patient?.latestCaseId ?? null
+  const caseId = propCaseId ?? patient?.latestCaseId ?? undefined
   const patientId = propPatientId ?? (patient ? Number(patient.id) : 0)
 
   const canViewCases = usePermission("cases.view")

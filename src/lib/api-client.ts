@@ -118,7 +118,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 }
 
 /**
- * For endpoints that return a binary body (the intake sheet PDF) rather
+ * For endpoints that return a binary body (the case PDFs, e.g. the UIS) rather
  * than JSON — same auth header and URL building as `request`, but resolves
  * to a Blob instead of parsing JSON.
  */

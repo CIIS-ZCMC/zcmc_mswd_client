@@ -33,3 +33,20 @@ export interface ApiWatcherRelationshipType {
   created_at?: string
   updated_at?: string
 }
+
+export interface ApiUisPrintLog {
+  id: number
+  case_id: number
+  his_transaction_id?: number | null
+  printed_by_id?: number | null
+  printed_by?: {
+    id: number
+    name: string
+  } | null
+  printed_at: string
+  copies?: number
+  remarks?: string | null
+  created_at: string
+  updated_at?: string
+}
+

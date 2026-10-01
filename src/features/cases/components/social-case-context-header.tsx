@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { getCardColorConfig } from "../lib/case-card-color"
 import type { CaseRecord } from "../types/case.types"
+import { formatTransactionType } from "@/features/hospital/lib/transaction-type"
 import { Building2, Stethoscope, User, Hash, UserCheck } from "lucide-react"
 
 interface SocialCaseContextHeaderProps {
@@ -71,10 +72,14 @@ export const SocialCaseContextHeader: React.FC<SocialCaseContextHeaderProps> = (
             {caseRecord.transactionId && (
               <>
                 <span>•</span>
-                <span className="font-mono flex items-center gap-1 text-muted-foreground">
+                <span className="font-mono flex items-center gap-1.5 text-muted-foreground">
                   <Hash className="size-3 text-primary/70" />
                   HIS Encounter #{caseRecord.transactionId}
-                  {caseRecord.transactionType && ` (${caseRecord.transactionType})`}
+                  {caseRecord.transactionType && (
+                    <span className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-sans text-xs font-semibold">
+                      {formatTransactionType(caseRecord.transactionType)}
+                    </span>
+                  )}
                 </span>
               </>
             )}
