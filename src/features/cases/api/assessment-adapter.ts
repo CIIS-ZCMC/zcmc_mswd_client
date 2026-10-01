@@ -1,5 +1,10 @@
 import type { ApiAssessment, ApiMswdClassificationMatrix } from "@/features/patients/types/api.types"
-import type { Assessment, MswdClassificationCode, MswdClassificationMatrix } from "../types/assessment.types"
+import type {
+  Assessment,
+  LegacyClassification,
+  MswdClassificationCode,
+  MswdClassificationMatrix,
+} from "../types/assessment.types"
 
 export function adaptMswdClassificationMatrix(
   api: ApiMswdClassificationMatrix
@@ -42,7 +47,8 @@ export function adaptAssessment(api: ApiAssessment): Assessment {
       ? Number(api.net_per_capita_income)
       : null,
     calculatedClassification: (api.calculated_classification as MswdClassificationCode) || null,
-    classification: (api.classification as MswdClassificationCode) || "D",
+    // Never default to a bracket: an empty value is "not on file", not class D.
+    classification: (api.classification as MswdClassificationCode | LegacyClassification) || null,
     classificationOverrideReason: api.classification_override_reason ?? null,
     calculatedDiscountRate: api.calculated_discount_rate !== undefined && api.calculated_discount_rate !== null
       ? Number(api.calculated_discount_rate)
@@ -50,7 +56,23 @@ export function adaptAssessment(api: ApiAssessment): Assessment {
     hasOverride: Boolean(api.has_override),
     housingType: api.housing_type ?? null,
     utilitiesAccess: api.utilities_access ?? null,
+    houseTenure: api.house_tenure ?? null,
+    lightSource: api.light_source ?? [],
+    waterSource: api.water_source ?? [],
     presentingProblem: api.presenting_problem ?? null,
+    problemCategories: api.problem_categories ?? [],
+    problemSpecify: api.problem_specify ?? null,
+    informantName: api.informant_name ?? null,
+    informantRelationship: api.informant_relationship ?? null,
+    otherIncomeSources: (api.other_income_sources ?? []).map((i) => ({
+      source: i.source,
+      amount: i.amount !== null && i.amount !== undefined ? Number(i.amount) : null,
+    })),
+    referralSource: api.referral_source ?? null,
+    medicalHistory: api.medical_history ?? null,
+    recommendation: api.recommendation ?? null,
+    recommendationMode: api.recommendation_mode ?? null,
+    fundSource: api.fund_source ?? null,
     familyBackground: api.family_background ?? null,
     socialFunctioning: api.social_functioning ?? null,
     assessmentNotes: api.assessment_notes ?? null,

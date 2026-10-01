@@ -28,12 +28,24 @@ export function setToken(token: string | null): void {
 export class ApiError extends Error {
   status: number
   errors?: Record<string, string[]>
+  /**
+   * Machine-readable reason some endpoints add next to `message` — e.g. the
+   * UIS print returns 409 `{code: "uis_no_assessment"}` so the UI can offer
+   * "Assess" instead of a generic failure.
+   */
+  code?: string
 
-  constructor(message: string, status: number, errors?: Record<string, string[]>) {
+  constructor(
+    message: string,
+    status: number,
+    errors?: Record<string, string[]>,
+    code?: string,
+  ) {
     super(message)
     this.name = "ApiError"
     this.status = status
     this.errors = errors
+    this.code = code
   }
 
   /** First validation message, if any — handy for a single-line toast. */
@@ -111,6 +123,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       payload?.message ?? res.statusText ?? "Request failed",
       res.status,
       payload?.errors,
+      payload?.code,
     )
   }
 
@@ -127,12 +140,27 @@ export async function fetchBlob(path: string, params?: QueryParams): Promise<Blo
 
   const res = await fetch(buildUrl(path, { params }), {
     headers: {
+      // Asking for JSON as well keeps Laravel from answering a validation
+      // failure with a redirect, and lets us read its error body below.
+      Accept: "application/pdf, application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   })
 
   if (!res.ok) {
-    throw new ApiError(res.statusText || "Request failed", res.status)
+    if (res.status === 401) setToken(null)
+
+    const contentType = res.headers.get("content-type") ?? ""
+    const payload = contentType.includes("application/json")
+      ? await res.json().catch(() => undefined)
+      : undefined
+
+    throw new ApiError(
+      payload?.message ?? (res.statusText || "Request failed"),
+      res.status,
+      payload?.errors,
+      payload?.code,
+    )
   }
 
   return res.blob()

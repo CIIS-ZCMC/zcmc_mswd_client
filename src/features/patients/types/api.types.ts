@@ -53,6 +53,8 @@ export interface ApiFamilyMember {
   age: number | null
   birthdate: string | null
   sex: string | null
+  /** Free-text on the server (UIS §II civil-status column). */
+  civil_status: string | null
   occupation: string | null
   monthly_income: string | number | null
   educational_attainment: string | null
@@ -158,22 +160,6 @@ export interface ApiCase {
   updated_at: string
 }
 
-export interface ApiUisPrintLog {
-  id: number
-  case_id: number
-  his_transaction_id?: number | null
-  printed_by_id?: number | null
-  printed_by?: {
-    id: number
-    name: string
-  } | null
-  printed_at: string
-  copies?: number
-  remarks?: string | null
-  created_at: string
-  updated_at?: string
-}
-
 export interface ApiAssessmentExpense {
   id: number
   assessment_id: number
@@ -195,6 +181,12 @@ export interface ApiMswdClassificationMatrix {
   description?: string | null
 }
 
+/** UIS §II "other source/s of family income" — one row per source. */
+export interface ApiOtherIncomeSource {
+  source: string
+  amount: string | number | null
+}
+
 export interface ApiAssessment {
   id: number
   case_id: number
@@ -212,7 +204,22 @@ export interface ApiAssessment {
   has_override?: boolean
   housing_type: string | null
   utilities_access: string | null
+  // UIS §III/§IV checkbox vocabularies (server Assessment::HOUSE_TENURES etc.).
+  house_tenure?: string | null
+  light_source?: string[] | null
+  water_source?: string[] | null
   presenting_problem: string | null
+  problem_categories?: string[] | null
+  problem_specify?: string | null
+  // UIS header / §II / §V fields.
+  informant_name?: string | null
+  informant_relationship?: string | null
+  other_income_sources?: ApiOtherIncomeSource[] | null
+  referral_source?: string | null
+  medical_history?: string | null
+  recommendation?: string | null
+  recommendation_mode?: string | null
+  fund_source?: string | null
   family_background: string | null
   social_functioning: string | null
   assessment_notes: string | null
