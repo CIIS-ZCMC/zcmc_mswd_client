@@ -18,13 +18,72 @@ import { HospitalEncounterDetail } from "@/features/hospital/components/hospital
 import { RegistryStatusBadge } from "@/features/hospital/components/registry-status-badge"
 import { AssessEncounterDialog } from "@/features/hospital/components/dialogs/assess-encounter-dialog"
 import { OpenCaseDialog } from "@/features/cases/components/dialogs/open-case-dialog"
+import { EncounterUisPanel } from "@/features/cases/components/encounter-uis-panel"
+import { useAssignableCases } from "@/features/hospital/hooks/use-hospital-encounters"
+import { formatTransactionType } from "@/features/hospital/lib/transaction-type"
+import { usePrintEncounterUis } from "@/features/cases/hooks/use-uis-prints"
 import type { HospitalEncounter } from "@/features/hospital/types"
-import { AlertCircle, Building2, Calendar, ClipboardCheck, ExternalLink, FolderPlus, Loader2 } from "lucide-react"
+import { AlertCircle, Building2, Calendar, ClipboardCheck, ExternalLink, FolderPlus, Loader2, Printer } from "lucide-react"
 import { useNavigate } from "react-router"
 import type { PatientRecord } from "../../types"
 
 interface HospitalEncountersTabProps {
   patient: PatientRecord
+}
+
+const EncounterHeader: React.FC<{
+  encounter: HospitalEncounter
+  canViewIntake: boolean
+}> = ({ encounter, canViewIntake }) => {
+  const printMutation = usePrintEncounterUis(encounter.id)
+
+  const handlePrint = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      await printMutation.mutateAsync(undefined)
+    } catch (err) {
+      console.error("Failed to print UIS for encounter", err)
+    }
+  }
+
+  return (
+    <div className="flex flex-1 flex-wrap items-center justify-between gap-3 pr-3">
+      <div className="flex items-center gap-2.5 flex-wrap">
+        <RegistryStatusBadge status={encounter.registrationStatus} />
+        <span className="text-sm sm:text-base font-bold text-foreground">
+          Encounter #{encounter.id}
+        </span>
+        <span className="bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+          {formatTransactionType(encounter.patientTransactionType)}
+        </span>
+      </div>
+      <div className="flex items-center gap-3 text-xs sm:text-sm font-medium text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          {encounter.registrationDate ?? "—"}
+        </span>
+
+        {canViewIntake && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={printMutation.isPending}
+            onClick={handlePrint}
+            className="h-8 px-2.5 text-xs font-bold gap-1.5 border shadow-2xs text-primary hover:bg-primary/10 hover:text-primary shrink-0"
+            title="Download Unified Intake Sheet (ANNEX B) PDF for this encounter"
+          >
+            {printMutation.isPending ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+            ) : (
+              <Printer className="w-3.5 h-3.5 text-primary" />
+            )}
+            Print UIS
+          </Button>
+        )}
+      </div>
+    </div>
+  )
 }
 
 const EncounterBody: React.FC<{
@@ -35,9 +94,29 @@ const EncounterBody: React.FC<{
   canCreateCase: boolean
 }> = ({ encounter, expanded, patient, canAssess, canCreateCase }) => {
   const navigate = useNavigate()
+  const canViewIntake = usePermission("intake.view")
   const [assessOpen, setAssessOpen] = useState(false)
   const [openCaseOpen, setOpenCaseOpen] = useState(false)
+  const [createdCase, setCreatedCase] = useState<{ id: number; caseCode: string } | null>(null)
+
   const { data: detail, isLoading, error } = useHospitalEncounter(encounter.id, expanded)
+  const { data: assignableCases = [] } = useAssignableCases(encounter.id, expanded)
+
+  const activeCase =
+    createdCase ??
+    (assignableCases.length > 0
+      ? { id: assignableCases[0].id, caseCode: assignableCases[0].caseCode }
+      : null)
+
+  const printUisMutation = usePrintEncounterUis(encounter.id)
+
+  const handleDirectPrintUis = async () => {
+    try {
+      await printUisMutation.mutateAsync(undefined)
+    } catch (err) {
+      console.error("Failed to print UIS", err)
+    }
+  }
 
   return (
     <div className="space-y-4 pt-2">
@@ -57,6 +136,15 @@ const EncounterBody: React.FC<{
 
       {detail && <HospitalEncounterDetail encounter={detail} />}
 
+      {/* Per-Encounter Unified Intake Sheet (ANNEX B) Printable Panel */}
+      <EncounterUisPanel
+        caseId={activeCase?.id}
+        caseCode={activeCase?.caseCode}
+        transactionId={encounter.id}
+        transactionType={encounter.patientTransactionType}
+        onOpenCaseNeeded={() => setOpenCaseOpen(true)}
+      />
+
       <div className="flex items-center justify-end gap-2.5 pt-2 border-t flex-wrap">
         {patient.latestCaseId && (
           <Button
@@ -67,6 +155,24 @@ const EncounterBody: React.FC<{
           >
             <ExternalLink className="w-4 h-4 text-primary" />
             View Active Case
+          </Button>
+        )}
+
+        {canViewIntake && (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={printUisMutation.isPending}
+            onClick={handleDirectPrintUis}
+            className="font-bold text-sm h-10 px-4 gap-2 border shadow-2xs text-primary hover:bg-primary/5"
+            title="Download Unified Intake Sheet (ANNEX B) PDF for this encounter"
+          >
+            {printUisMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin text-primary" />
+            ) : (
+              <Printer className="w-4 h-4 text-primary" />
+            )}
+            Print UIS
           </Button>
         )}
 
@@ -112,7 +218,7 @@ const EncounterBody: React.FC<{
           onCaseOpened={(newCase) => {
             setOpenCaseOpen(false)
             if (newCase?.id) {
-              navigate(`/cases/${newCase.id}`)
+              setCreatedCase({ id: newCase.id, caseCode: newCase.caseCode || `CASE-${newCase.id}` })
             }
           }}
         />
@@ -126,6 +232,7 @@ export const HospitalEncountersTab: React.FC<HospitalEncountersTabProps> = ({ pa
   const hospitalNumber = patient.hospitalId
   const canAssess = usePermission("cases.update")
   const canCreateCase = usePermission("cases.create")
+  const canViewIntake = usePermission("intake.view")
   const [open, setOpen] = useState<string[]>([])
 
   const { data: encounters = [], isLoading, error } = useHospitalEncounters(hospitalNumber)
@@ -199,23 +306,7 @@ export const HospitalEncountersTab: React.FC<HospitalEncountersTabProps> = ({ pa
             {encounters.map((enc) => (
               <AccordionItem key={enc.id} value={String(enc.id)} className="border rounded-lg px-4 shadow-2xs transition-colors">
                 <AccordionTrigger className="hover:no-underline py-3.5">
-                  <div className="flex flex-1 flex-wrap items-center justify-between gap-3 pr-3">
-                    <div className="flex items-center gap-3">
-                      <RegistryStatusBadge status={enc.registrationStatus} />
-                      <span className="text-sm sm:text-base font-bold text-foreground">
-                        Encounter #{enc.id}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs sm:text-sm font-medium text-muted-foreground">
-                      {enc.patientTransactionType && (
-                        <span className="bg-muted px-2 py-0.5 rounded text-xs">{enc.patientTransactionType}</span>
-                      )}
-                      <span className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                        {enc.registrationDate ?? "—"}
-                      </span>
-                    </div>
-                  </div>
+                  <EncounterHeader encounter={enc} canViewIntake={canViewIntake} />
                 </AccordionTrigger>
                 <AccordionContent className="pb-4">
                   <EncounterBody

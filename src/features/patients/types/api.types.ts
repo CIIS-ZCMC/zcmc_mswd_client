@@ -143,6 +143,8 @@ export interface ApiCase {
   priority_level: string | null
   status: string
   admission_type: string | null
+  transaction_id?: number | null
+  transaction_type?: string | null
   date_opened: string | null
   date_closed: string | null
   assigned_user?: ApiUserLite | null
@@ -154,6 +156,22 @@ export interface ApiCase {
   activities_count?: number
   created_at: string
   updated_at: string
+}
+
+export interface ApiUisPrintLog {
+  id: number
+  case_id: number
+  his_transaction_id?: number | null
+  printed_by_id?: number | null
+  printed_by?: {
+    id: number
+    name: string
+  } | null
+  printed_at: string
+  copies?: number
+  remarks?: string | null
+  created_at: string
+  updated_at?: string
 }
 
 export interface ApiAssessmentExpense {
@@ -352,29 +370,6 @@ export interface ApiDiagnostic {
   diagnosis_date: string | null
   attending_physician: string | null
   facility_name: string | null
-  created_at: string
-  updated_at: string
-}
-
-export interface ApiUnifiedIntakeSheet {
-  id: number
-  intake_no: string
-  status: "draft" | "submitted" | "finalized" | "cancelled"
-  referral_source: string | null
-  referral_details: string | null
-  date_of_intake: string | null
-  remarks: string | null
-  patient_id: number
-  case_id: number | null
-  assessment_id: number | null
-  intake_worker_id: number | null
-  submitted_at: string | null
-  finalized_at: string | null
-  finalized_by: number | null
-  patient?: ApiPatient
-  case?: ApiCase
-  assessment?: ApiAssessment
-  intake_worker?: ApiUserLite | null
   created_at: string
   updated_at: string
 }

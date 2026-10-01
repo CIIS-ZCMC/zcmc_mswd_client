@@ -28,11 +28,14 @@ import {
   Calendar,
   CheckCircle2,
   ChevronDown,
+  ClipboardList,
   Download,
   Eye,
   FileSpreadsheet,
   FileText,
   History,
+  Loader2,
+  Printer,
   RotateCcw,
   Stethoscope,
   Trash2,
@@ -44,6 +47,9 @@ import { CloseCaseDialog } from "./dialogs/close-case-dialog"
 import { ReferCaseDialog } from "./dialogs/refer-case-dialog"
 import { SocialCaseTab } from "@/features/patients/components/tabs/social-case-tab"
 import { WatchersTab } from "@/features/patients/components/tabs/watchers-tab"
+import { EncounterUisPanel } from "./encounter-uis-panel"
+import { usePrintCaseUis } from "../hooks/use-uis-prints"
+import { formatTransactionType } from "@/features/hospital/lib/transaction-type"
 import { ProgressNotesTab } from "./progress-notes-tab"
 import { AssessmentHistoryTimeline } from "./assessment-history-timeline"
 import { usePermission } from "@/features/auth/hooks/use-permission"
@@ -68,11 +74,13 @@ export const CaseDetailPage: React.FC = () => {
 
   const canUpdate = usePermission("cases.update")
   const canDelete = usePermission("cases.delete")
+  const canViewIntake = usePermission("intake.view")
 
   const { data: caseRecord, isLoading, error } = useCase(caseId)
   const { data: activities = [] } = useCaseActivities(caseId)
   const { data: assessments = [] } = useCaseAssessments(Number(caseId))
   const { updateCase, reopenCase, archiveCase } = useCaseMutations(caseId)
+  const printUisMutation = usePrintCaseUis(caseRecord?.id, caseRecord?.caseCode)
 
   const [isAssignOpen, setIsAssignOpen] = useState(false)
   const [isCloseOpen, setIsCloseOpen] = useState(false)
@@ -256,7 +264,12 @@ export const CaseDetailPage: React.FC = () => {
               {caseRecord.transactionId && (
                 <>
                   <span>•</span>
-                  <span className="font-mono text-muted-foreground">HIS Encounter #{caseRecord.transactionId}</span>
+                  <span className="flex items-center gap-1.5 font-mono text-muted-foreground">
+                    HIS Encounter #{caseRecord.transactionId}
+                    <span className="bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 rounded-full font-sans text-xs font-semibold">
+                      {formatTransactionType(caseRecord.transactionType)}
+                    </span>
+                  </span>
                 </>
               )}
             </div>
@@ -298,6 +311,24 @@ export const CaseDetailPage: React.FC = () => {
               <Download className="size-4 text-primary" />
               {isDownloadingPdf ? "Exporting..." : "Summary PDF"}
             </Button>
+
+            {canViewIntake && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={printUisMutation.isPending}
+                onClick={() => printUisMutation.mutate(undefined)}
+                className="font-bold text-xs sm:text-sm h-10 px-3.5 gap-1.5"
+                title="Download Unified Intake Sheet (ANNEX B) PDF and log print"
+              >
+                {printUisMutation.isPending ? (
+                  <Loader2 className="size-4 animate-spin text-primary" />
+                ) : (
+                  <Printer className="size-4 text-primary" />
+                )}
+                {printUisMutation.isPending ? "Generating..." : "Print UIS (ANNEX B)"}
+              </Button>
+            )}
 
             {canUpdate && !isClosedOrReferred && (
               <>
@@ -371,6 +402,14 @@ export const CaseDetailPage: React.FC = () => {
             </TabsTrigger>
 
             <TabsTrigger
+              value="intake-sheet"
+              className="rounded-lg px-4 py-2.5 h-auto text-xs sm:text-sm font-bold gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all cursor-pointer"
+            >
+              <ClipboardList className="size-4" />
+              <span>Intake Sheet (ANNEX B)</span>
+            </TabsTrigger>
+
+            <TabsTrigger
               value="progress-notes"
               className="rounded-lg px-4 py-2.5 h-auto text-xs sm:text-sm font-bold gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all cursor-pointer"
             >
@@ -410,6 +449,15 @@ export const CaseDetailPage: React.FC = () => {
               patientName={caseRecord.patient?.fullName}
               caseCode={caseRecord.caseCode}
               showCaseContext={false}
+            />
+          </TabsContent>
+
+          <TabsContent value="intake-sheet">
+            <EncounterUisPanel
+              caseId={caseRecord.id}
+              caseCode={caseRecord.caseCode}
+              transactionId={caseRecord.transactionId}
+              transactionType={caseRecord.transactionType}
             />
           </TabsContent>
 

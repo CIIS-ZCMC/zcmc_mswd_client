@@ -13,10 +13,9 @@ import {
 import { patientDetailKeys } from "./use-patient-detail"
 
 /**
- * Real server-backed writes for the patient detail view. Distinct from
- * usePatientMutations (which only splices local state for the not-yet-wired
- * Intake Sheet flow) — these hit the API and invalidate the profile query
- * on success so the new record shows up from the server, not a client guess.
+ * Real server-backed writes for the patient detail view — these hit the API
+ * and invalidate the profile query on success so the new record shows up from
+ * the server, not a client guess.
  */
 export function useAddFamilyMember(patientId: string) {
   const queryClient = useQueryClient()

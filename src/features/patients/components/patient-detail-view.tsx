@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Building2,
-  ClipboardList,
   CreditCard,
   Edit,
   Eye,
@@ -25,7 +24,6 @@ import {
   useDeleteFamilyMember,
   useUpdateFamilyMember,
 } from "../hooks/use-patient-writes"
-import { useIntakeSheetsForPatient } from "../hooks/use-intake-sheets"
 import type { FamilyMember, PatientRecord } from "../types"
 import { FamilyMemberDialog } from "./dialogs/family-member-dialog"
 import { OpenCaseDialog } from "@/features/cases/components/dialogs/open-case-dialog"
@@ -34,7 +32,6 @@ import { FamilyTab } from "./tabs/family-tab"
 import { HistoryTab } from "./tabs/history-tab"
 import { HospitalEncountersTab } from "./tabs/hospital-encounters-tab"
 import { IdTab } from "./tabs/id-tab"
-import { IntakeSheetTab } from "./tabs/intake-sheet-tab"
 import { ProfileTab } from "./tabs/profile-tab"
 import { SocialCaseTab } from "./tabs/social-case-tab"
 import { CaretakeTab } from "./tabs/caretake-tab"
@@ -49,12 +46,27 @@ interface PatientDetailViewProps {
   onUpdatePatient?: (updatedPatient: PatientRecord) => void
 }
 
+const PATIENT_TABS = [
+  "profile",
+  "id",
+  "family",
+  "watchers",
+  "caretake",
+  "social-case",
+  "hospital-encounters",
+  "documents",
+  "history",
+]
+
 export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient }) => {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const canCreateCase = usePermission("cases.create")
 
-  const activeTab = searchParams.get("tab") || "profile"
+  // An unknown ?tab= (e.g. a bookmarked link to the removed intake-sheet tab)
+  // falls back to the profile rather than rendering an empty pane.
+  const requestedTab = searchParams.get("tab")
+  const activeTab = requestedTab && PATIENT_TABS.includes(requestedTab) ? requestedTab : "profile"
   const setActiveTab = (tab: string) => {
     setSearchParams(
       (prev) => {
@@ -79,7 +91,6 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
   const addFamilyMember = useAddFamilyMember(patient.id)
   const updateFamilyMember = useUpdateFamilyMember(patient.id)
   const deleteFamilyMember = useDeleteFamilyMember(patient.id)
-  const { data: intakeSheets = [] } = useIntakeSheetsForPatient(patient.id)
 
   const handleAddFamilyMember = (newFamily: Omit<FamilyMember, "id">) => {
     addFamilyMember.mutate({
@@ -276,17 +287,6 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
             </TabsTrigger>
 
             <TabsTrigger
-              value="intake-sheet"
-              className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
-            >
-              <ClipboardList className="size-5" />
-              <span>Intake Sheet</span>
-              <span className="ml-1 rounded-full bg-background/25 text-current px-2.5 py-0.5 text-xs font-black">
-                {intakeSheets.length}
-              </span>
-            </TabsTrigger>
-
-            <TabsTrigger
               value="documents"
               className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
             >
@@ -345,10 +345,6 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
 
           <TabsContent value="hospital-encounters">
             <HospitalEncountersTab patient={patient} />
-          </TabsContent>
-
-          <TabsContent value="intake-sheet">
-            <IntakeSheetTab patient={patient} />
           </TabsContent>
 
           <TabsContent value="documents">

@@ -12,9 +12,9 @@
  *  - "Most recent case" stands in for "the patient's episode" everywhere a
  *    single case/classification is expected. A patient with two concurrent
  *    open cases will only show one here — known limitation, not a bug.
- *  - Intake Sheets are intentionally NOT wired to real data yet (separate
- *    phase) — always returns `[]`. The tab's add/edit flow still works
- *    against local-only state via `usePatientMutations`, same as before.
+ *  - There is no stored "Intake Sheet" record any more: the Unified Intake Sheet
+ *    (ANNEX B) is a printable the server renders from a case, with a print history
+ *    (see features/cases/api/uis-print-api.ts).
  */
 import type { FamilyMember, MedicalCategory, StaffAssignment } from "../types/case-study.types"
 import type { DocumentItem } from "../types/document.types"

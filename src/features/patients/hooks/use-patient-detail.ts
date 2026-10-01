@@ -70,14 +70,12 @@ export function usePatientDetail(patientId: string) {
   }, [profileQuery.data, latestCaseQuery.data, assessmentsQuery.data, historyQuery.data, canViewCases])
 
   /**
-   * Local overlay on top of the server-derived record — needed only because
-   * the Intake Sheet tab still edits its patient in place via
-   * usePatientMutations (that flow isn't wired to a real endpoint yet, see
-   * patients-adapter.ts). Every real write (family member, watcher) goes
-   * through use-patient-writes.ts and invalidates the queries above instead
-   * of touching this directly; that re-syncs this overlay via the effect
-   * below and discards any not-yet-saved local Intake Sheet edit in the
-   * process — acceptable while that flow is still local-only.
+   * Local overlay on top of the server-derived record. Every real write
+   * (family member, watcher) goes through use-patient-writes.ts and
+   * invalidates the queries above instead of touching this directly; that
+   * re-syncs this overlay via the effect below. (The intake-sheet tab that
+   * once edited this in place has been removed — the overlay may be
+   * removable in a follow-up.)
    */
   const [localPatient, setLocalPatient] = useState<PatientRecord | undefined>(undefined)
   // Tracks the last serverPatient this hook has synced from, so a fresh

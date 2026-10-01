@@ -72,14 +72,6 @@ export interface PatientRecord {
   /** The handler of the *latest episode*, which is not the same thing as custody. */
   assignedStaff: StaffAssignment
   caseStudy: SocialCaseStudy
-  /**
-   * Legacy mock-only field from the original flat design. Real intake
-   * sheet data is fetched independently via useIntakeSheetsForPatient
-   * (same pattern as case/assessment data) — nothing in the real data
-   * path reads this. Kept here, untyped, only so mock-patients.ts's old
-   * literal data still type-checks.
-   */
-  intakeSheets?: unknown[]
   documents: DocumentItem[]
   history: AuditHistory[]
   latestCaseId?: number

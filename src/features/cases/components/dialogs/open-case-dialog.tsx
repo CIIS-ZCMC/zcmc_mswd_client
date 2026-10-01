@@ -25,6 +25,7 @@ import { CARD_COLORS } from "../../lib/case-card-color"
 import type { CaseCardColor, CasePriority, CaseRecord } from "../../types/case.types"
 import { usePatients } from "@/features/patients/hooks/use-patients"
 import { useHospitalEncounter, useHospitalEncounters } from "@/features/hospital/hooks/use-hospital-encounters"
+import { formatTransactionType } from "@/features/hospital/lib/transaction-type"
 import type { HospitalEncounter } from "@/features/hospital/types"
 
 interface OpenCaseDialogProps {
@@ -230,7 +231,7 @@ export const OpenCaseDialog: React.FC<OpenCaseDialogProps> = ({
               <span className="font-semibold uppercase tracking-wider text-primary">Attached Encounter:</span>
               <div className="text-sm font-bold text-foreground flex items-center gap-2">
                 <Building2 className="size-4 text-primary shrink-0" />
-                Encounter #{initialTransactionId} {derivedTransactionType ? `· ${derivedTransactionType}` : ""}
+                Encounter #{initialTransactionId} {derivedTransactionType ? `· ${formatTransactionType(derivedTransactionType)}` : ""}
               </div>
             </div>
           ) : (
@@ -258,7 +259,7 @@ export const OpenCaseDialog: React.FC<OpenCaseDialogProps> = ({
                   <SelectContent className="max-h-60">
                     {encounters.map((enc) => (
                       <SelectItem key={enc.id} value={String(enc.id)} className="text-sm">
-                        Encounter #{enc.id} · {enc.patientTransactionType ?? "Encounter"} (
+                        Encounter #{enc.id} · {formatTransactionType(enc.patientTransactionType)} (
                         {enc.registrationDate ?? "No date"})
                       </SelectItem>
                     ))}

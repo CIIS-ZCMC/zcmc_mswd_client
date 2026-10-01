@@ -24,7 +24,7 @@ Front-end for the ZCMC (Zamboanga City Medical Center) Medical Social Work Depar
 
 ### Shell
 
-`main.tsx` (QueryClientProvider + ThemeProvider) → `App.tsx` (auth gate: spinner / `LoginForm` / `MainLayout`) → `components/layout/main-layout.tsx` (Header + Sidebar master list + `PatientDetailView`). The detail view is a 9-tab pane: `profile`, `id`, `family`, `watchers`, `staff`, `social-case`, `intake-sheet`, `documents`, `history`.
+`main.tsx` (QueryClientProvider + ThemeProvider) → `App.tsx` (auth gate: spinner / `LoginForm` / `MainLayout`) → `components/layout/main-layout.tsx` (Header + Sidebar master list + `PatientDetailView`). The detail view is a 9-tab pane: `profile`, `id`, `family`, `watchers`, `caretake`, `social-case`, `hospital-encounters`, `documents`, `history`. The Unified Intake Sheet (ANNEX B) is **not** a patient tab or a stored record — it is a printable the server renders from a case (`features/cases`: `uis-print-api`, `encounter-uis-panel`), printed from the case detail page and the Hospital Encounters tab, with a print history.
 
 `App.tsx` holds no data — it wires `usePatients()` (list, pagination, filters) and `usePatientDetail()` (one patient) into `MainLayout` as props. The prop list is long and hand-threaded; follow that pattern rather than introducing a context unless asked.
 
@@ -46,7 +46,7 @@ Front-end for the ZCMC (Zamboanga City Medical Center) Medical Social Work Depar
 ### Two write paths — don't confuse them
 
 - **Real, server-backed**: `use-patient-writes.ts` (family members, watchers, patient background) and `use-caretaker-writes.ts` (assign/reassign/unassign custody). These call the API and invalidate queries on success so the new state comes from the server, never from a client guess. Custody writes also invalidate `history`, since the server writes an audit entry.
-- **Local-only overlay**: `use-patient-mutations.ts` splices a whole new `PatientRecord` in memory and prepends an `AuditHistory` entry. It exists **only** for the Intake Sheet tab, which is not yet wired to an endpoint. `usePatientDetail` keeps a `localPatient` overlay for it, resynced from the server value during render; any real write discards pending local edits.
+- **Local overlay**: `usePatientDetail` keeps a `localPatient` overlay on top of the server-derived record, resynced from the server value during render; any real write (via `use-patient-writes.ts`) invalidates the queries and discards it. It was originally needed by the now-removed intake-sheet tab and may be removable.
 
 New write paths should go through path one. Do not add to the local overlay.
 
