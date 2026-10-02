@@ -122,3 +122,8 @@ export async function promoteAssessmentToSocialCase(assessmentId: number): Promi
   )
   return res.data
 }
+
+/** DELETE /assessments/{assessment} — soft-deletes an assessment (a finalized SCSR is refused with 422) */
+export async function deleteAssessment(assessmentId: number): Promise<void> {
+  await apiClient.delete<void>(`/assessments/${assessmentId}`)
+}

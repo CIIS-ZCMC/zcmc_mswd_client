@@ -1,3 +1,4 @@
+import type { ApiAssessment } from "@/features/patients/types/api.types"
 export interface ApiCaseWatcher {
   id: number
   case_id: number
@@ -81,3 +82,19 @@ export interface ApiUisReadiness {
   last_printed_at: string | null
 }
 
+/** GET /patients/{id}/uis — one row per case, with its UIS state. */
+export interface ApiPatientUisRow {
+  case: {
+    id: number
+    case_code: string
+    status: string
+    transaction_id: number | null
+    transaction_type: string | null
+    date_opened: string | null
+  }
+  uis: ApiUisReadiness & {
+    has_social_case: boolean
+    /** The case's newest intake assessment (with expenses), or null. */
+    assessment: ApiAssessment | null
+  }
+}

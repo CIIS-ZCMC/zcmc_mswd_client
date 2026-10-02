@@ -86,3 +86,15 @@ export const LEGACY_CLASSIFICATION_OPTIONS = [
   { value: "self_sufficient", label: "Self-Sufficient (legacy)" },
   { value: "others", label: "Others (legacy)" },
 ] as const
+
+/**
+ * The label for a stored option value. A value outside the list (legacy
+ * free text, or something typed in the admin panel) is shown as stored.
+ */
+export function labelFor(
+  options: ReadonlyArray<{ value: string; label: string }>,
+  value: string | null | undefined
+): string | null {
+  if (!value) return null
+  return options.find((o) => o.value === value)?.label ?? value
+}
