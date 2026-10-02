@@ -98,6 +98,9 @@ const EncounterBody: React.FC<{
         caseId={activeCase?.id}
         caseCode={activeCase?.caseCode}
         patientName={patient.fullName}
+        patientAddress={patient.address}
+        patientContact={patient.contactNo}
+        patientMonthlyIncome={patient.monthlyIncome}
         transactionId={encounter.id}
         transactionType={encounter.patientTransactionType}
         onOpenCaseNeeded={() => setOpenCaseOpen(true)}

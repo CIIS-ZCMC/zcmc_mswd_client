@@ -582,6 +582,7 @@ export const CaseDetailPage: React.FC = () => {
           [caseRecord.patient?.barangay, caseRecord.patient?.city].filter(Boolean).join(", ")
         }
         patientContact={caseRecord.patient?.contactNo}
+        patientMonthlyIncome={caseRecord.patient?.monthlyIncome}
         existingAssessment={assessments[0] ?? null}
       />
 

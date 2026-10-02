@@ -24,6 +24,7 @@ export interface EncounterUisPanelProps {
   patientName?: string | null
   patientAddress?: string | null
   patientContact?: string | null
+  patientMonthlyIncome?: number | null
   transactionId?: number | null
   transactionType?: string | null
   onOpenCaseNeeded?: () => void
@@ -37,6 +38,7 @@ export const EncounterUisPanel: React.FC<EncounterUisPanelProps> = ({
   patientName,
   patientAddress,
   patientContact,
+  patientMonthlyIncome,
   transactionId,
   transactionType,
   onOpenCaseNeeded,
@@ -213,6 +215,7 @@ export const EncounterUisPanel: React.FC<EncounterUisPanelProps> = ({
         patientName={patientName ?? undefined}
         patientAddress={patientAddress ?? undefined}
         patientContact={patientContact ?? undefined}
+        patientMonthlyIncome={patientMonthlyIncome}
         existingAssessment={latestAssessment}
       />
     </Card>

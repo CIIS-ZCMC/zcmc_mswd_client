@@ -802,6 +802,7 @@ export const UisSheet: React.FC<UisSheetProps> = ({
         patientName={patient.fullName}
         patientAddress={patient.address}
         patientContact={patient.contactNo}
+        patientMonthlyIncome={patient.monthlyIncome}
         existingAssessment={assessment}
       />
 

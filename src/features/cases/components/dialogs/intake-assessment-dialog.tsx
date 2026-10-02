@@ -56,8 +56,10 @@ import {
   FileEdit,
   HeartHandshake,
   Home,
+  Info,
   Lightbulb,
   Loader2,
+  Lock,
   Plus,
   Receipt,
   Stethoscope,
@@ -78,6 +80,7 @@ interface IntakeAssessmentDialogProps {
   patientLastName?: string
   patientAddress?: string
   patientContact?: string
+  patientMonthlyIncome?: number | null
   existingAssessment?: Assessment | null
   onSuccess?: () => void
 }
@@ -141,6 +144,7 @@ export const IntakeAssessmentDialog: React.FC<IntakeAssessmentDialogProps> = ({
   patientLastName,
   patientAddress,
   patientContact,
+  patientMonthlyIncome,
   existingAssessment,
   onSuccess,
 }) => {
@@ -171,8 +175,7 @@ export const IntakeAssessmentDialog: React.FC<IntakeAssessmentDialogProps> = ({
   const [problemSpecify, setProblemSpecify] = useState("")
   const [medicalHistory, setMedicalHistory] = useState("")
 
-  // Income Breakdown & Auto Computation
-  const [primaryIncome, setPrimaryIncome] = useState<string>("0")
+  // Income Breakdown & Auto Computation (Patient Base Sourced from Profile + Staged Other Sources)
   const [otherIncomeSources, setOtherIncomeSources] = useState<StagedIncome[]>([])
 
   // Socio-Economic Housing & Utilities
@@ -211,12 +214,14 @@ export const IntakeAssessmentDialog: React.FC<IntakeAssessmentDialogProps> = ({
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
+  // Patient Base Monthly Income (from profile)
+  const patientIncomeNum = Math.max(0, Number(patientMonthlyIncome) || 0)
+
   // Auto-calculated Total Monthly Family Income
   const calculatedTotalFamilyIncome = useMemo(() => {
-    const primary = Math.max(0, Number(primaryIncome) || 0)
     const otherSum = otherIncomeSources.reduce((sum, item) => sum + (Number(item.amount) || 0), 0)
-    return primary + otherSum
-  }, [primaryIncome, otherIncomeSources])
+    return patientIncomeNum + otherSum
+  }, [patientIncomeNum, otherIncomeSources])
 
   // Auto-calculated Housing & Utilities Cost
   const housingAndUtilitiesTotal = useMemo(() => {
@@ -283,7 +288,7 @@ export const IntakeAssessmentDialog: React.FC<IntakeAssessmentDialogProps> = ({
         setIsInformantPatient(
           (existingAssessment.informantRelationship?.toLowerCase() === "patient" ||
             existingAssessment.informantRelationship?.toLowerCase() === "self") &&
-            Boolean(patientName && existingAssessment.informantName === patientName)
+          Boolean(patientName && existingAssessment.informantName === patientName)
         )
         setPresentingProblem(existingAssessment.presentingProblem ?? "")
         setProblemCategories(existingAssessment.problemCategories ?? [])
@@ -295,14 +300,6 @@ export const IntakeAssessmentDialog: React.FC<IntakeAssessmentDialogProps> = ({
           amount: s.amount,
         }))
         setOtherIncomeSources(existingOtherIncome)
-
-        const totalInc =
-          existingAssessment.totalFamilyIncome !== null && existingAssessment.totalFamilyIncome !== undefined
-            ? Number(existingAssessment.totalFamilyIncome)
-            : 0
-        const otherSum = existingOtherIncome.reduce((sum, item) => sum + (Number(item.amount) || 0), 0)
-        const primaryCalculated = Math.max(0, totalInc - otherSum)
-        setPrimaryIncome(String(primaryCalculated))
 
         setHouseTenure(existingAssessment.houseTenure ?? "")
         setLightSource(
@@ -338,8 +335,8 @@ export const IntakeAssessmentDialog: React.FC<IntakeAssessmentDialogProps> = ({
         setHasOverride(existingAssessment.hasOverride ?? false)
         setClassificationOverride(
           (existingAssessment.classification as string) ||
-            (existingAssessment.calculatedClassification as string) ||
-            ""
+          (existingAssessment.calculatedClassification as string) ||
+          ""
         )
         setOverrideReason(existingAssessment.classificationOverrideReason ?? "")
         setFamilyBackground(existingAssessment.familyBackground ?? "")
@@ -359,7 +356,6 @@ export const IntakeAssessmentDialog: React.FC<IntakeAssessmentDialogProps> = ({
         setProblemCategories([])
         setProblemSpecify("")
         setMedicalHistory("")
-        setPrimaryIncome("0")
         setOtherIncomeSources([])
         setHouseTenure("")
         setHouseTenureAmount("0")
@@ -385,7 +381,7 @@ export const IntakeAssessmentDialog: React.FC<IntakeAssessmentDialogProps> = ({
         ])
       }
     }
-  }, [open, existingAssessment, patientName, patientAddress, patientContact])
+  }, [open, existingAssessment, patientName, patientAddress, patientContact, patientMonthlyIncome])
 
   // Handle "Informant is Patient" toggle
   const handleToggleInformantIsPatient = (checked: boolean) => {
@@ -846,21 +842,26 @@ export const IntakeAssessmentDialog: React.FC<IntakeAssessmentDialogProps> = ({
               </div>
             </div>
 
-            {/* Income Inputs */}
+            {/* Income Inputs (Patient Base from Profile + Other Sources) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold uppercase tracking-wider flex items-center justify-between">
-                  <span>Primary / Patient Monthly Income (₱)</span>
+                  <span className="flex items-center gap-1.5">
+                    <Lock className="size-3 text-muted-foreground" />
+                    Patient Base Monthly Income (₱)
+                  </span>
                   <Coins className="size-3.5 text-muted-foreground" />
                 </Label>
-                <Input
-                  type="number"
-                  min="0"
-                  placeholder="0.00"
-                  value={primaryIncome}
-                  onChange={(e) => setPrimaryIncome(e.target.value)}
-                  className="h-11 text-base font-bold font-mono"
-                />
+                <div className="h-11 rounded-lg border border-border/80 bg-muted/40 px-3.5 flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground font-medium">Profile Base Income</span>
+                  <span className="text-base font-bold font-mono text-foreground">
+                    ₱{patientIncomeNum.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <Info className="size-3 text-muted-foreground shrink-0" />
+                  Read-only (sourced from patient profile). Edit in Patient Profile tab.
+                </p>
               </div>
 
               {/* Readonly Summary for Total Family Income */}
@@ -875,6 +876,9 @@ export const IntakeAssessmentDialog: React.FC<IntakeAssessmentDialogProps> = ({
                     ₱{calculatedTotalFamilyIncome.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </span>
                 </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Includes patient base + {otherIncomeSources.length} other source{otherIncomeSources.length !== 1 ? "s" : ""}.
+                </p>
               </div>
             </div>
 
@@ -1272,11 +1276,10 @@ export const IntakeAssessmentDialog: React.FC<IntakeAssessmentDialogProps> = ({
                   return (
                     <label
                       key={cat.value}
-                      className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs sm:text-sm font-semibold cursor-pointer select-none transition-all ${
-                        checked
+                      className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs sm:text-sm font-semibold cursor-pointer select-none transition-all ${checked
                           ? "bg-primary/10 border-primary text-primary shadow-2xs"
                           : "bg-muted/20 border-border/60 text-muted-foreground hover:bg-muted/40"
-                      }`}
+                        }`}
                     >
                       <Checkbox checked={checked} onCheckedChange={() => toggleCategory(cat.value)} />
                       <span>{cat.label}</span>
