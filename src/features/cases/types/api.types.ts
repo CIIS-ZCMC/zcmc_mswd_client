@@ -1,4 +1,3 @@
-import type { ApiAssessment } from "@/features/patients/types/api.types"
 export interface ApiCaseWatcher {
   id: number
   case_id: number
@@ -82,19 +81,48 @@ export interface ApiUisReadiness {
   last_printed_at: string | null
 }
 
-/** GET /patients/{id}/uis — one row per case, with its UIS state. */
-export interface ApiPatientUisRow {
-  case: {
-    id: number
-    case_code: string
-    status: string
-    transaction_id: number | null
-    transaction_type: string | null
-    date_opened: string | null
-  }
-  uis: ApiUisReadiness & {
-    has_social_case: boolean
-    /** The case's newest intake assessment (with expenses), or null. */
-    assessment: ApiAssessment | null
-  }
+/**
+ * ANNEX B section III amounts the server matched from the expense lines. A slot with no
+ * matching line is null (the printed form leaves it blank), not 0.
+ */
+export interface ApiPatientUisExpenseSlots {
+  housing: number | null
+  food: number | null
+  education: number | null
+  transport: number | null
+  clothing: number | null
+  medical: number | null
+  house_help: number | null
+  insurance: number | null
+  others: number | null
 }
+
+export interface ApiPatientUisCase {
+  id: number
+  case_code: string
+  status: string
+  transaction_id: number | null
+  transaction_type: string | null
+  date_opened: string
+}
+
+export interface ApiPatientUisInfo {
+  has_assessment: boolean
+  assessment_id: number | null
+  ready: boolean
+  missing: ApiUisMissingSection[]
+  classification: ApiUisReadiness["classification"]
+  print_count: number
+  last_printed_at: string | null
+  has_social_case: boolean
+  household_size: number
+  /** null when the case has no intake assessment. */
+  expense_slots: ApiPatientUisExpenseSlots | null
+  assessment: import("@/features/patients/types/api.types").ApiAssessment | null
+}
+
+export interface ApiPatientUisRow {
+  case: ApiPatientUisCase
+  uis: ApiPatientUisInfo
+}
+

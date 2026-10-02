@@ -2,31 +2,20 @@ import React, { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { usePermission } from "@/features/auth/hooks/use-permission"
-import { useCaseUisPrintHistory, useCaseUisReadiness } from "../hooks/use-uis-prints"
+import { useCaseUisReadiness } from "../hooks/use-uis-prints"
 import { useLatestAssessment } from "../hooks/use-assessment"
 import { formatTransactionType } from "@/features/hospital/lib/transaction-type"
 import { PrintUisDialog } from "./dialogs/print-uis-dialog"
 import { IntakeAssessmentDialog } from "./dialogs/intake-assessment-dialog"
-import type { ApiUisMissingSection } from "../types/api.types"
+import { UisPrintHistoryTable } from "./uis-print-history-table"
+import { MISSING_SECTION_LABELS } from "../lib/uis-labels"
 import {
   AlertCircle,
-  Clock,
   FileEdit,
   FolderPlus,
-  History,
-  Loader2,
   Printer,
   Sparkles,
-  User,
 } from "lucide-react"
 
 export interface EncounterUisPanelProps {
@@ -40,15 +29,6 @@ export interface EncounterUisPanelProps {
   onOpenCaseNeeded?: () => void
   onAssessNeeded?: () => void
   className?: string
-}
-
-const MISSING_SECTION_LABELS: Record<ApiUisMissingSection, string> = {
-  assessment: "Intake Assessment",
-  informant: "Informant Details",
-  family_composition: "Family Composition",
-  family_income: "Family Income & Sources",
-  problem_presented: "Presenting Problem",
-  recommendation: "Social Worker Recommendation",
 }
 
 export const EncounterUisPanel: React.FC<EncounterUisPanelProps> = ({
@@ -70,7 +50,6 @@ export const EncounterUisPanel: React.FC<EncounterUisPanelProps> = ({
 
   const { data: readiness, isLoading: isReadinessLoading } = useCaseUisReadiness(caseId)
   const { data: latestAssessment } = useLatestAssessment(caseId)
-  const { data: prints = [], isLoading: isHistoryLoading, error: historyError } = useCaseUisPrintHistory(caseId)
 
   const handleOpenAssess = () => {
     if (onAssessNeeded) {
@@ -125,7 +104,7 @@ export const EncounterUisPanel: React.FC<EncounterUisPanelProps> = ({
             <Printer className="size-4.5 text-primary shrink-0" />
             Unified Intake Sheet (ANNEX B) Printable
             <Badge variant="secondary" className="font-mono text-xs px-2 py-0.2 font-semibold">
-              {prints.length} Print{prints.length !== 1 ? "s" : ""}
+              {readiness?.print_count ?? 0} Print{(readiness?.print_count ?? 0) !== 1 ? "s" : ""}
             </Badge>
           </CardTitle>
           <CardDescription className="text-xs">
@@ -214,84 +193,7 @@ export const EncounterUisPanel: React.FC<EncounterUisPanelProps> = ({
       )}
 
       <CardContent className="p-0">
-        {isHistoryLoading ? (
-          <div className="flex items-center justify-center gap-2 p-8 text-xs text-muted-foreground">
-            <Loader2 className="size-4 animate-spin text-primary" />
-            Loading print history…
-          </div>
-        ) : historyError ? (
-          <div className="flex items-center gap-2 p-4 text-xs text-destructive">
-            <AlertCircle className="size-4 shrink-0" />
-            Could not load print history for this case.
-          </div>
-        ) : prints.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-8 text-center space-y-2.5 bg-muted/10">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-              <History className="size-5 opacity-70" />
-            </div>
-            <div className="space-y-0.5">
-              <div className="text-xs sm:text-sm font-semibold text-foreground">
-                No Prints Recorded Yet
-              </div>
-              <p className="text-xs text-muted-foreground max-w-sm">
-                Click <strong>Print UIS</strong> to configure copies, add remarks, or print blank forms.
-                Each print event is logged with user and timestamp.
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent bg-muted/30 text-xs">
-                  <TableHead className="font-bold">Printed By</TableHead>
-                  <TableHead className="font-bold">Date &amp; Time</TableHead>
-                  <TableHead className="font-bold">Copies</TableHead>
-                  <TableHead className="font-bold">Remarks</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {prints.map((log) => {
-                  const printDate = log.printed_at || log.created_at
-                  const formattedDate = printDate
-                    ? new Date(printDate).toLocaleString(undefined, {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : "—"
-
-                  return (
-                    <TableRow key={log.id} className="text-xs">
-                      <TableCell className="font-medium text-foreground">
-                        <span className="flex items-center gap-1.5">
-                          <User className="size-3.5 text-muted-foreground" />
-                          {log.printed_by?.name ?? "—"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground font-mono">
-                        <span className="flex items-center gap-1.5">
-                          <Clock className="size-3.5 text-muted-foreground" />
-                          {formattedDate}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="font-mono text-[11px] font-semibold px-2 py-0.2">
-                          {log.copies ?? 1} cop{log.copies === 1 ? "y" : "ies"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-xs">
-                        {log.remarks ? log.remarks : <span className="text-muted-foreground/60">—</span>}
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+        <UisPrintHistoryTable caseId={caseId} />
       </CardContent>
 
       <PrintUisDialog

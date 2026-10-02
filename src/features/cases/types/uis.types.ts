@@ -1,23 +1,56 @@
 import type { ApiUisMissingSection } from "./api.types"
-import type { Assessment } from "./assessment.types"
+import type {
+  Assessment,
+  LegacyClassification,
+  MswdClassificationCode,
+} from "./assessment.types"
 
-/** One case (= one hospital encounter) of a patient with its UIS state. */
-export interface PatientUisRow {
-  caseId: number
+/** A slot is null when no expense line matched it (shown blank, like the printed form). */
+export interface PatientUisExpenseSlots {
+  housing: number | null
+  food: number | null
+  education: number | null
+  transport: number | null
+  clothing: number | null
+  medical: number | null
+  house_help: number | null
+  insurance: number | null
+  others: number | null
+}
+
+export interface PatientUisCase {
+  id: number
   caseCode: string
-  caseStatus: string
+  status: string
   transactionId: number | null
   transactionType: string | null
-  dateOpened: string | null
+  dateOpened: string
+}
 
-  /** The case has an intake-time assessment, i.e. the UIS has data to print. */
+export interface PatientUisClassification {
+  classification: MswdClassificationCode | LegacyClassification | null
+  calculatedClassification: MswdClassificationCode | null
+  discountRate: number | null
+  netPerCapitaIncome: number | null
+  hasOverride: boolean
+}
+
+export interface PatientUisInfo {
   hasAssessment: boolean
-  /** The case's assessment was promoted to its SCSR, so it no longer prints as a UIS. */
-  hasSocialCase: boolean
+  assessmentId: number | null
   ready: boolean
   missing: ApiUisMissingSection[]
+  classification: PatientUisClassification | null
   printCount: number
   lastPrintedAt: string | null
-  /** The case's newest intake assessment (with expenses), or null. */
+  hasSocialCase: boolean
+  householdSize: number
+  /** null when the case has no intake assessment. */
+  expenseSlots: PatientUisExpenseSlots | null
   assessment: Assessment | null
+}
+
+export interface PatientUisRow {
+  case: PatientUisCase
+  uis: PatientUisInfo
 }

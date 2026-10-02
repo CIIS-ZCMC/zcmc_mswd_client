@@ -68,3 +68,19 @@ export function listCaseUisPrints(caseId: number | string): Promise<ApiUisPrintL
     .get<ApiEnvelope<ApiUisPrintLog[]>>(`/cases/${caseId}/uis/prints`)
     .then((res) => res.data)
 }
+
+/**
+ * Streams the UIS PDF with `preview: 1` and returns a blob object URL for embedding in an in-page <iframe> preview.
+ * Returns both the object URL and a revoke callback to free memory when the modal closes.
+ */
+export async function getCaseUisPreviewBlobUrl(
+  caseId: number | string
+): Promise<{ url: string; revoke: () => void }> {
+  const blob = await fetchBlob(`/cases/${caseId}/uis/pdf`, { preview: 1 })
+  const url = URL.createObjectURL(blob)
+  return {
+    url,
+    revoke: () => URL.revokeObjectURL(url),
+  }
+}
+
