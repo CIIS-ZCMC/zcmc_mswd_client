@@ -213,7 +213,13 @@ export interface ApiAssessment {
   problem_specify?: string | null
   // UIS header / §II / §V fields.
   informant_name?: string | null
+  informant_first_name?: string | null
+  informant_middle_name?: string | null
+  informant_last_name?: string | null
   informant_relationship?: string | null
+  informant_address?: string | null
+  informant_contact_number?: string | null
+  informant_contact?: string | null
   other_income_sources?: ApiOtherIncomeSource[] | null
   referral_source?: string | null
   medical_history?: string | null

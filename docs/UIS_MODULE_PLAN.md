@@ -9,10 +9,10 @@ MSWD classification on every expense write, and changed the UIS print contract.
 | Phase | Depends on | Status |
 |-------|-----------|--------|
 | 1. Contract plumbing + types (`ApiError.code`, `fetchBlob` errors, assessment/family/readiness types) + classification display (A–D + legacy) (#56) | server | ☑ done |
-| 2. Family civil status (type, adapter, dialog, family tab) | 1 | ☐ |
-| 3. UIS print flow (readiness, copies/remarks/preview/blank, 409, drop encounter endpoints) | 1 | ☐ |
-| 4. Intake assessment form (create/edit, expenses CRUD, reassess dialog fixes) | 1, 3 | ☐ |
-| 5. Docs (contract-sync pointer, CLAUDE.md) | 4 | ☐ |
+| 2. Family civil status (type, adapter, dialog, family tab) | 1 | ☑ done |
+| 3. UIS print flow (readiness, copies/remarks/preview/blank, 409, drop encounter endpoints) | 1 | ☑ done |
+| 4. Intake assessment form (create/edit, expenses CRUD, reassess dialog fixes) | 1, 3 | ☑ done |
+| 5. Docs (contract-sync pointer, CLAUDE.md) | 4 | ☑ done |
 
 ## Background — what was broken against the server
 

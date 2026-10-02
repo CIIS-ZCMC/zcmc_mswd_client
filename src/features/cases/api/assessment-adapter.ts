@@ -63,7 +63,12 @@ export function adaptAssessment(api: ApiAssessment): Assessment {
     problemCategories: api.problem_categories ?? [],
     problemSpecify: api.problem_specify ?? null,
     informantName: api.informant_name ?? null,
+    informantFirstName: api.informant_first_name ?? null,
+    informantMiddleName: api.informant_middle_name ?? null,
+    informantLastName: api.informant_last_name ?? null,
     informantRelationship: api.informant_relationship ?? null,
+    informantAddress: api.informant_address ?? null,
+    informantContact: api.informant_contact_number ?? api.informant_contact ?? null,
     otherIncomeSources: (api.other_income_sources ?? []).map((i) => ({
       source: i.source,
       amount: i.amount !== null && i.amount !== undefined ? Number(i.amount) : null,

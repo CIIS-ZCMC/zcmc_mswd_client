@@ -10,6 +10,9 @@ first** — Phases 5 and 6 need server Phases 1 and 3; **Phase 7 must not land
 until server Phase 4 is deployed**, or the sidebar's category and date filters
 will silently filter nothing.
 
+> See also `docs/UIS_MODULE_PLAN.md` for the Unified Intake Sheet (Intake + Assessing)
+> client plan covering Phase 1–5 (assessment fields, expenses CRUD, readiness hints, case-only print).
+
 **Status legend:** ☐ not started · ◐ in progress · ☑ done
 
 | Phase | Status | Depends on |

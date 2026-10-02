@@ -59,6 +59,7 @@ export const FamilyTab: React.FC<FamilyTabProps> = ({
               <TableRow className="border-b border-border/60">
                 <TableHead className="font-extrabold text-foreground text-base">Full Name</TableHead>
                 <TableHead className="font-extrabold text-foreground text-base">Relationship</TableHead>
+                <TableHead className="font-extrabold text-foreground text-base">Civil Status</TableHead>
                 <TableHead className="font-extrabold text-foreground text-base">Age</TableHead>
                 <TableHead className="font-extrabold text-foreground text-base">Sex</TableHead>
                 <TableHead className="font-extrabold text-foreground text-base">Contact Number</TableHead>
@@ -82,6 +83,7 @@ export const FamilyTab: React.FC<FamilyTabProps> = ({
                     </div>
                   </TableCell>
                   <TableCell className="font-medium text-base">{fam.relationship}</TableCell>
+                  <TableCell className="font-medium text-base">{fam.civilStatus || "—"}</TableCell>
                   <TableCell className="font-medium text-base">{fam.age} yrs</TableCell>
                   <TableCell className="capitalize font-medium text-base">{fam.sex || "N/A"}</TableCell>
                   <TableCell className="font-mono font-medium text-base">{fam.contactNumber || "N/A"}</TableCell>

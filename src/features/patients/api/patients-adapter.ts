@@ -114,6 +114,7 @@ function toFamilyMember(raw: ApiFamilyMember): FamilyMember {
     birthdate: raw.birthdate?.slice(0, 10) ?? "",
     sex: raw.sex ?? "",
     age: raw.age ?? 0,
+    civilStatus: raw.civil_status ?? "",
     occupation: raw.occupation ?? "",
     monthlyIncome: raw.monthly_income != null ? Number(raw.monthly_income) : 0,
     educationalAttainment: raw.educational_attainment ?? "",

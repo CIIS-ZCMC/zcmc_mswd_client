@@ -35,6 +35,15 @@ const RELATIONSHIP_OPTIONS = [
   "Other",
 ]
 
+const CIVIL_STATUS_OPTIONS = [
+  "Single",
+  "Married",
+  "Widowed",
+  "Separated",
+  "Common-law",
+  "Other",
+]
+
 const EDUCATIONAL_ATTAINMENT_OPTIONS = [
   "No Formal Education",
   "Elementary Level",
@@ -112,6 +121,7 @@ export const FamilyMemberDialog: React.FC<FamilyMemberDialogProps> = ({
     relationship: "Child",
     birthdate: "",
     sex: "",
+    civilStatus: "Single",
     age: 0,
     occupation: "",
     monthlyIncome: 0,
@@ -119,6 +129,16 @@ export const FamilyMemberDialog: React.FC<FamilyMemberDialogProps> = ({
     contactNumber: "",
     isLivingWithPatient: true,
   })
+
+  const civilStatusOptions = React.useMemo(() => {
+    if (
+      newFamily.civilStatus &&
+      !CIVIL_STATUS_OPTIONS.some((opt) => opt.toLowerCase() === newFamily.civilStatus.toLowerCase())
+    ) {
+      return [...CIVIL_STATUS_OPTIONS, newFamily.civilStatus]
+    }
+    return CIVIL_STATUS_OPTIONS
+  }, [newFamily.civilStatus])
 
   useEffect(() => {
     if (isOpen) {
@@ -131,6 +151,11 @@ export const FamilyMemberDialog: React.FC<FamilyMemberDialogProps> = ({
           (opt) => opt.toLowerCase() === (initialMember.relationship ?? "").toLowerCase()
         )
 
+        // Normalize civil status against options case-insensitively
+        const matchCivil = CIVIL_STATUS_OPTIONS.find(
+          (opt) => opt.toLowerCase() === (initialMember.civilStatus ?? "").toLowerCase()
+        )
+
         // Normalize educational attainment against options case-insensitively
         const matchEdu = EDUCATIONAL_ATTAINMENT_OPTIONS.find(
           (opt) => opt.toLowerCase() === (initialMember.educationalAttainment ?? "").toLowerCase()
@@ -141,6 +166,7 @@ export const FamilyMemberDialog: React.FC<FamilyMemberDialogProps> = ({
           relationship: matchRel || initialMember.relationship || "Child",
           birthdate: formattedBirthdate,
           sex: normalizedSex,
+          civilStatus: matchCivil || initialMember.civilStatus || "Single",
           age: initialMember.age || (formattedBirthdate ? computeAgeFromBirthdate(formattedBirthdate) ?? 0 : 0),
           occupation: initialMember.occupation ?? "",
           monthlyIncome: initialMember.monthlyIncome ?? 0,
@@ -154,6 +180,7 @@ export const FamilyMemberDialog: React.FC<FamilyMemberDialogProps> = ({
           relationship: "Child",
           birthdate: "",
           sex: "",
+          civilStatus: "Single",
           age: 0,
           occupation: "",
           monthlyIncome: 0,
@@ -217,7 +244,7 @@ export const FamilyMemberDialog: React.FC<FamilyMemberDialogProps> = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <Label className="text-[17px] font-bold text-foreground mb-1.5 block">Sex</Label>
                 <Select
@@ -234,6 +261,25 @@ export const FamilyMemberDialog: React.FC<FamilyMemberDialogProps> = ({
                     <SelectItem value="female" className="text-base py-2.5 font-medium">
                       Female
                     </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label className="text-[17px] font-bold text-foreground mb-1.5 block">Civil Status</Label>
+                <Select
+                  value={newFamily.civilStatus}
+                  onValueChange={(val) => setNewFamily({ ...newFamily, civilStatus: val ?? "" })}
+                >
+                  <SelectTrigger className="h-12 text-base font-medium px-4">
+                    <SelectValue placeholder="Civil Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {civilStatusOptions.map((status) => (
+                      <SelectItem key={status} value={status} className="text-base py-2.5 font-medium">
+                        {status}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -261,7 +307,7 @@ export const FamilyMemberDialog: React.FC<FamilyMemberDialogProps> = ({
                 />
                 {newFamily.birthdate && (
                   <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1 flex items-center gap-1">
-                    ✓ Auto-calculated from birthdate
+                    ✓ Auto-calculated
                   </p>
                 )}
               </div>
