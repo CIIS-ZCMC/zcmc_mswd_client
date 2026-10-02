@@ -104,6 +104,18 @@ const EncounterBody: React.FC<{
       />
 
       <div className="flex items-center justify-end gap-2.5 pt-2 border-t flex-wrap">
+        {activeCase && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate(`/patients/${patient.id}?tab=uis&case=${activeCase.id}`)}
+            className="font-bold text-sm h-10 px-4 gap-1.5 border shadow-2xs"
+          >
+            <ExternalLink className="w-4 h-4 text-primary" />
+            Open UIS Sheet
+          </Button>
+        )}
+
         {patient.latestCaseId && (
           <Button
             type="button"

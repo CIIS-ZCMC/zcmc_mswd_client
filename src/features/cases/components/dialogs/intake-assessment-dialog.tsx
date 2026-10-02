@@ -763,8 +763,9 @@ export const IntakeAssessmentDialog: React.FC<IntakeAssessmentDialogProps> = ({
                 <Select
                   value={informantRelationship}
                   onValueChange={(val) => {
-                    setInformantRelationship(val ?? "")
-                    if (val !== "Other") {
+                    const nextVal = val ?? ""
+                    setInformantRelationship(nextVal)
+                    if (nextVal !== "Other") {
                       setCustomRelationship("")
                     }
                   }}

@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { AlertCircle, ExternalLink, FileText, Loader2, Printer, Sparkles } from "lucide-react"
 import { ApiError } from "@/lib/api-client"
 import { useCaseUisReadiness, usePrintCaseUis } from "../../hooks/use-uis-prints"
-import type { ApiUisMissingSection } from "../../types/api.types"
+import { MISSING_SECTION_LABELS } from "../../lib/uis-labels"
 
 interface PrintUisDialogProps {
   caseId: number | string
@@ -24,15 +24,6 @@ interface PrintUisDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onAssessNeeded?: () => void
-}
-
-const MISSING_SECTION_LABELS: Record<ApiUisMissingSection, string> = {
-  assessment: "Intake Assessment",
-  informant: "Informant Details",
-  family_composition: "Family Composition",
-  family_income: "Family Income & Sources",
-  problem_presented: "Presenting Problem",
-  recommendation: "Social Worker Recommendation",
 }
 
 export const PrintUisDialog: React.FC<PrintUisDialogProps> = ({

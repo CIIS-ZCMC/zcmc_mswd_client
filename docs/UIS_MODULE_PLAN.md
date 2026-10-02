@@ -13,7 +13,6 @@ MSWD classification on every expense write, and changed the UIS print contract.
 | 3. UIS print flow (readiness, copies/remarks/preview/blank, 409, drop encounter endpoints) | 1 | ☑ done |
 | 4. Intake assessment form (create/edit, expenses CRUD, reassess dialog fixes) | 1, 3 | ☑ done |
 | 5. Docs (contract-sync pointer, CLAUDE.md) | 4 | ☑ done |
-| 6. Patient-page UIS tab with CRUD (#62; server `GET /patients/{id}/uis`, server #178) | 1–5 | ☑ done |
 
 ## Background — what was broken against the server
 
@@ -114,6 +113,14 @@ coerce an empty classification to `"D"`. Classification helpers moved to `featur
 Add a pointer from `docs/API_CONTRACT_SYNC_PLAN.md`; update CLAUDE.md's UIS sentence (case-only print,
 readiness, no encounter endpoint); mark every phase above ☑.
 
+## Phase 6 — Redesigned Patient UIS Tab (done)
+
+See `docs/UIS_PATIENT_TAB_PLAN.md`. Redesigned the `/patients/:id?tab=uis` tab with:
+- Encounter picker rail (`uis-encounter-rail.tsx`) supporting deep linking `?tab=uis&case=<id>`.
+- Full ANNEX B sheet (`uis-sheet.tsx`) displaying informant details, Section I–V, MSWD classification card, and print history.
+- Actions: Assess/Edit, Print UIS dialog, in-page PDF preview dialog (`uis-pdf-preview-dialog.tsx`), and Delete assessment confirmation.
+- Hospital encounters tab deep link to the UIS tab.
+
 ## Verification
 
 Per phase: `npm run build` (runs `tsc -b`; plain `npm run typecheck` does not check the app sources).
@@ -129,21 +136,3 @@ in the browser against a local server (`php artisan migrate:fresh --seed && php 
 5. Family member civil status round-trips and appears on the printed UIS §II grid.
 6. A legacy-classification row shows "(legacy)" and keeps its value through an edit.
 7. An inpatient case with no watcher shows the watcher error on create, with no row written.
-
-## Phase 6 — Patient-page UIS tab (done)
-
-`/patients/:id?tab=uis` lists the patient's cases (= hospital encounters) newest first, from one request
-(`GET /patients/{id}/uis`, `usePatientUis`, key `patientUisKeys`). Per row: case, encounter, UIS status (Not
-assessed / Assessed / Ready to print / Promoted to SCSR), classification badge, informant, still-missing
-sections, print count. CRUD: **Create** = Assess on a case without an assessment, **Read** = View (a side
-sheet laid out as ANNEX B sections I–V, `uis-sheet-view.tsx`), **Update** = Edit, **Delete** = confirm dialog
-(`DELETE /assessments/{id}`; a finalized SCSR is refused and the server message is shown). Create/Edit reuse
-`IntakeAssessmentDialog`, Print reuses `PrintUisDialog`, and "Case" opens `/cases/:id?tab=intake-sheet`.
-Every assessment/expense/print mutation invalidates `patientUisKeys.all`. Gating: list/View/Print on
-`intake.view`, Assess on `cases.create`, Edit/Delete on `cases.update`. `?tab=uis&case=<id>` opens that
-case's sheet. No header "New UIS" picker: each unassessed row has its own Assess button, and a patient with no
-case gets an "Open a Case" prompt.
-
-Known follow-ups: the server does not return `household_size`, so the classification card shows
-"Household Size 1" (the net per-capita figure itself is the server's and correct); the Hospital Encounters
-tab does not yet deep-link to a row.
