@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Building2,
+  ClipboardList,
   CreditCard,
   Edit,
   Eye,
@@ -35,6 +36,7 @@ import { IdTab } from "./tabs/id-tab"
 import { ProfileTab } from "./tabs/profile-tab"
 import { SocialCaseTab } from "./tabs/social-case-tab"
 import { CaretakeTab } from "./tabs/caretake-tab"
+import { UisTab } from "./tabs/uis-tab"
 import { WatchersTab } from "./tabs/watchers-tab"
 
 import { WatcherStatusBanner } from "./watcher-status-banner"
@@ -54,6 +56,7 @@ const PATIENT_TABS = [
   "caretake",
   "social-case",
   "hospital-encounters",
+  "uis",
   "documents",
   "history",
 ]
@@ -289,6 +292,14 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
             </TabsTrigger>
 
             <TabsTrigger
+              value="uis"
+              className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
+            >
+              <ClipboardList className="size-5" />
+              <span>UIS</span>
+            </TabsTrigger>
+
+            <TabsTrigger
               value="documents"
               className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
             >
@@ -347,6 +358,10 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
 
           <TabsContent value="hospital-encounters">
             <HospitalEncountersTab patient={patient} />
+          </TabsContent>
+
+          <TabsContent value="uis">
+            <UisTab patient={patient} onOpenCaseNeeded={() => setIsOpenCaseOpen(true)} />
           </TabsContent>
 
           <TabsContent value="documents">

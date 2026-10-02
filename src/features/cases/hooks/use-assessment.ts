@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   createAssessmentExpense,
   createCaseAssessment,
+  deleteAssessment,
   deleteAssessmentExpense,
   getCaseAssessments,
   getLatestAssessment,
@@ -19,7 +20,7 @@ import type {
   UpdateAssessmentExpensePayload,
   UpdateAssessmentPayload,
 } from "../types/assessment.types"
-import { uisPrintKeys } from "./use-uis-prints"
+import { patientUisKeys, uisPrintKeys } from "./use-uis-prints"
 
 export const assessmentKeys = {
   matrix: ["mswd-classification-matrix"] as const,
@@ -69,6 +70,7 @@ export function useCreateAssessment(caseId: number) {
       queryClient.invalidateQueries({ queryKey: assessmentKeys.caseAssessments(caseId) })
       queryClient.invalidateQueries({ queryKey: assessmentKeys.latestAssessment(caseId) })
       queryClient.invalidateQueries({ queryKey: uisPrintKeys.readiness(caseId) })
+      queryClient.invalidateQueries({ queryKey: patientUisKeys.all })
       queryClient.invalidateQueries({ queryKey: ["cases", caseId, "social-case"] })
       if (assessment?.id) {
         queryClient.invalidateQueries({ queryKey: assessmentKeys.expenses(assessment.id) })
@@ -86,6 +88,7 @@ export function useUpdateAssessment(caseId: number, assessmentId: number) {
       queryClient.invalidateQueries({ queryKey: assessmentKeys.caseAssessments(caseId) })
       queryClient.invalidateQueries({ queryKey: assessmentKeys.latestAssessment(caseId) })
       queryClient.invalidateQueries({ queryKey: uisPrintKeys.readiness(caseId) })
+      queryClient.invalidateQueries({ queryKey: patientUisKeys.all })
       queryClient.invalidateQueries({ queryKey: ["cases", caseId, "social-case"] })
       queryClient.invalidateQueries({ queryKey: assessmentKeys.expenses(assessmentId) })
     },
@@ -103,6 +106,7 @@ export function useCreateAssessmentExpense(caseId: number, assessmentId: number)
       queryClient.invalidateQueries({ queryKey: assessmentKeys.caseAssessments(caseId) })
       queryClient.invalidateQueries({ queryKey: assessmentKeys.latestAssessment(caseId) })
       queryClient.invalidateQueries({ queryKey: uisPrintKeys.readiness(caseId) })
+      queryClient.invalidateQueries({ queryKey: patientUisKeys.all })
     },
   })
 }
@@ -123,6 +127,7 @@ export function useUpdateAssessmentExpense(caseId: number, assessmentId: number)
       queryClient.invalidateQueries({ queryKey: assessmentKeys.caseAssessments(caseId) })
       queryClient.invalidateQueries({ queryKey: assessmentKeys.latestAssessment(caseId) })
       queryClient.invalidateQueries({ queryKey: uisPrintKeys.readiness(caseId) })
+      queryClient.invalidateQueries({ queryKey: patientUisKeys.all })
     },
   })
 }
@@ -137,6 +142,7 @@ export function useDeleteAssessmentExpense(caseId: number, assessmentId: number)
       queryClient.invalidateQueries({ queryKey: assessmentKeys.caseAssessments(caseId) })
       queryClient.invalidateQueries({ queryKey: assessmentKeys.latestAssessment(caseId) })
       queryClient.invalidateQueries({ queryKey: uisPrintKeys.readiness(caseId) })
+      queryClient.invalidateQueries({ queryKey: patientUisKeys.all })
     },
   })
 }
@@ -150,6 +156,7 @@ export function useReassessCase(caseId: number) {
       queryClient.invalidateQueries({ queryKey: assessmentKeys.caseAssessments(caseId) })
       queryClient.invalidateQueries({ queryKey: assessmentKeys.latestAssessment(caseId) })
       queryClient.invalidateQueries({ queryKey: uisPrintKeys.readiness(caseId) })
+      queryClient.invalidateQueries({ queryKey: patientUisKeys.all })
       queryClient.invalidateQueries({ queryKey: ["cases", caseId, "social-case"] })
     },
   })
@@ -165,6 +172,22 @@ export function usePromoteAssessmentToSocialCase(caseId: number) {
       queryClient.invalidateQueries({ queryKey: assessmentKeys.caseAssessments(caseId) })
       queryClient.invalidateQueries({ queryKey: assessmentKeys.latestAssessment(caseId) })
       queryClient.invalidateQueries({ queryKey: uisPrintKeys.readiness(caseId) })
+      queryClient.invalidateQueries({ queryKey: patientUisKeys.all })
+    },
+  })
+}
+
+export function useDeleteAssessment(caseId: number) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (assessmentId: number) => deleteAssessment(assessmentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: assessmentKeys.caseAssessments(caseId) })
+      queryClient.invalidateQueries({ queryKey: assessmentKeys.latestAssessment(caseId) })
+      queryClient.invalidateQueries({ queryKey: uisPrintKeys.readiness(caseId) })
+      queryClient.invalidateQueries({ queryKey: patientUisKeys.all })
+      queryClient.invalidateQueries({ queryKey: ["cases", caseId, "social-case"] })
     },
   })
 }

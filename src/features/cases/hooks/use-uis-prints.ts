@@ -6,12 +6,37 @@ import {
   listCaseUisPrints,
   type CaseUisPdfOptions,
 } from "../api/uis-print-api"
+import { getPatientUis } from "../api/patient-uis-api"
 import type { ApiUisPrintLog, ApiUisReadiness } from "../types/api.types"
+import type { PatientUisRow } from "../types/uis.types"
 
 export const uisPrintKeys = {
   all: ["uis-prints"] as const,
   case: (caseId: number | string) => ["uis-prints", "case", String(caseId)] as const,
   readiness: (caseId: number | string) => ["uis-prints", "case", String(caseId), "readiness"] as const,
+}
+
+/**
+ * A patient's UIS list (GET /patients/{id}/uis). Any write to an assessment,
+ * its expenses or a print changes a row, and the mutation hooks only know the
+ * case id, so they invalidate the whole prefix.
+ */
+export const patientUisKeys = {
+  all: ["patient-uis"] as const,
+  patient: (patientId: number | string) => ["patient-uis", String(patientId)] as const,
+}
+
+/** Hook for the patient page UIS tab: every case of the patient with its UIS state. */
+export function usePatientUis(patientId?: number | string | null) {
+  const canView = usePermission("intake.view")
+  const isEnabled =
+    canView && patientId != null && patientId !== "" && !Number.isNaN(Number(patientId))
+
+  return useQuery<PatientUisRow[]>({
+    queryKey: patientUisKeys.patient(patientId ?? ""),
+    queryFn: () => getPatientUis(patientId!),
+    enabled: isEnabled,
+  })
 }
 
 /**
@@ -64,6 +89,7 @@ export function usePrintCaseUis(caseId?: number | string | null, caseCode?: stri
       if (caseId) {
         queryClient.invalidateQueries({ queryKey: uisPrintKeys.case(caseId) })
         queryClient.invalidateQueries({ queryKey: uisPrintKeys.readiness(caseId) })
+        queryClient.invalidateQueries({ queryKey: patientUisKeys.all })
       }
     },
   })
