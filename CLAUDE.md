@@ -24,7 +24,7 @@ Front-end for the ZCMC (Zamboanga City Medical Center) Medical Social Work Depar
 
 ### Shell
 
-`main.tsx` (QueryClientProvider + ThemeProvider) → `App.tsx` (auth gate: spinner / `LoginForm` / `MainLayout`) → `components/layout/main-layout.tsx` (Header + Sidebar master list + `PatientDetailView`). The detail view is a 9-tab pane: `profile`, `id`, `family`, `watchers`, `caretake`, `social-case`, `hospital-encounters`, `documents`, `history`. The Unified Intake Sheet (ANNEX B) is **not** a patient tab or a stored record — it is a printable the server renders from a case (`features/cases`: `uis-print-api`, `encounter-uis-panel`), printed from the case detail page and the Hospital Encounters tab, with a print history.
+`main.tsx` (QueryClientProvider + ThemeProvider) → `App.tsx` (auth gate: spinner / `LoginForm` / `MainLayout`) → `components/layout/main-layout.tsx` (Header + Sidebar master list + `PatientDetailView`). The detail view is a 9-tab pane: `profile`, `id`, `family`, `watchers`, `caretake`, `social-case`, `hospital-encounters`, `documents`, `history`. The Unified Intake Sheet (ANNEX B) is **not** a patient tab or a stored record — it is a case-only printable the server renders (`GET /cases/{id}/uis/pdf`, with readiness hints from `GET /cases/{id}/uis`), printed from the case detail page and the Hospital Encounters tab, with a print history and blank template option. There is no encounter-level UIS print endpoint.
 
 `App.tsx` holds no data — it wires `usePatients()` (list, pagination, filters) and `usePatientDetail()` (one patient) into `MainLayout` as props. The prop list is long and hand-threaded; follow that pattern rather than introducing a context unless asked.
 

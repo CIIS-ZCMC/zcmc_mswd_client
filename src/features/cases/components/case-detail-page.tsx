@@ -31,10 +31,10 @@ import {
   ClipboardList,
   Download,
   Eye,
+  FileEdit,
   FileSpreadsheet,
   FileText,
   History,
-  Loader2,
   Printer,
   RotateCcw,
   Stethoscope,
@@ -45,10 +45,12 @@ import {
 import { AssignCaseDialog } from "./dialogs/assign-case-dialog"
 import { CloseCaseDialog } from "./dialogs/close-case-dialog"
 import { ReferCaseDialog } from "./dialogs/refer-case-dialog"
+import { PrintUisDialog } from "./dialogs/print-uis-dialog"
+import { IntakeAssessmentDialog } from "./dialogs/intake-assessment-dialog"
+import { ReassessCaseDialog } from "./dialogs/reassess-case-dialog"
 import { SocialCaseTab } from "@/features/patients/components/tabs/social-case-tab"
 import { WatchersTab } from "@/features/patients/components/tabs/watchers-tab"
 import { EncounterUisPanel } from "./encounter-uis-panel"
-import { usePrintCaseUis } from "../hooks/use-uis-prints"
 import { formatTransactionType } from "@/features/hospital/lib/transaction-type"
 import { ProgressNotesTab } from "./progress-notes-tab"
 import { AssessmentHistoryTimeline } from "./assessment-history-timeline"
@@ -80,11 +82,13 @@ export const CaseDetailPage: React.FC = () => {
   const { data: activities = [] } = useCaseActivities(caseId)
   const { data: assessments = [] } = useCaseAssessments(Number(caseId))
   const { updateCase, reopenCase, archiveCase } = useCaseMutations(caseId)
-  const printUisMutation = usePrintCaseUis(caseRecord?.id, caseRecord?.caseCode)
 
   const [isAssignOpen, setIsAssignOpen] = useState(false)
   const [isCloseOpen, setIsCloseOpen] = useState(false)
   const [isReferOpen, setIsReferOpen] = useState(false)
+  const [isPrintUisOpen, setIsPrintUisOpen] = useState(false)
+  const [isIntakeAssessmentOpen, setIsIntakeAssessmentOpen] = useState(false)
+  const [isReassessOpen, setIsReassessOpen] = useState(false)
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
 
   const handleDownloadSummaryPdf = async () => {
@@ -316,17 +320,12 @@ export const CaseDetailPage: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={printUisMutation.isPending}
-                onClick={() => printUisMutation.mutate(undefined)}
-                className="font-bold text-xs sm:text-sm h-10 px-3.5 gap-1.5"
-                title="Download Unified Intake Sheet (ANNEX B) PDF and log print"
+                onClick={() => setIsPrintUisOpen(true)}
+                className="font-bold text-xs sm:text-sm h-10 px-3.5 gap-1.5 cursor-pointer"
+                title="Configure print copies, remarks, preview and download UIS"
               >
-                {printUisMutation.isPending ? (
-                  <Loader2 className="size-4 animate-spin text-primary" />
-                ) : (
-                  <Printer className="size-4 text-primary" />
-                )}
-                {printUisMutation.isPending ? "Generating..." : "Print UIS (ANNEX B)"}
+                <Printer className="size-4 text-primary" />
+                Print UIS (ANNEX B)
               </Button>
             )}
 
@@ -456,8 +455,10 @@ export const CaseDetailPage: React.FC = () => {
             <EncounterUisPanel
               caseId={caseRecord.id}
               caseCode={caseRecord.caseCode}
+              patientName={caseRecord.patient?.fullName}
               transactionId={caseRecord.transactionId}
               transactionType={caseRecord.transactionType}
+              onAssessNeeded={() => handleTabChange("assessments")}
             />
           </TabsContent>
 
@@ -466,7 +467,39 @@ export const CaseDetailPage: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="assessments">
-            <div className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-card rounded-xl border border-border/70 shadow-2xs">
+                <div>
+                  <h3 className="font-extrabold text-base text-foreground">Case Assessment History</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Record intake assessments, economic background, expenses, and re-assessment episodes.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {canUpdate && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsIntakeAssessmentOpen(true)}
+                        className="font-bold text-xs h-9 px-3 gap-1.5 cursor-pointer"
+                      >
+                        <FileEdit className="size-3.5 text-primary" />
+                        {assessments.length > 0 ? "Edit Intake Assessment" : "Intake Assessment"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => setIsReassessOpen(true)}
+                        className="font-bold text-xs h-9 px-3.5 gap-1.5 shadow-2xs cursor-pointer"
+                      >
+                        <RotateCcw className="size-3.5" />
+                        Re-assess Case
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+
               <AssessmentHistoryTimeline assessments={assessments} />
             </div>
           </TabsContent>
@@ -527,6 +560,36 @@ export const CaseDetailPage: React.FC = () => {
         caseCode={caseRecord.caseCode}
         open={isReferOpen}
         onOpenChange={setIsReferOpen}
+      />
+
+      <PrintUisDialog
+        caseId={Number(caseId)}
+        caseCode={caseRecord.caseCode}
+        patientName={caseRecord.patient?.fullName}
+        open={isPrintUisOpen}
+        onOpenChange={setIsPrintUisOpen}
+        onAssessNeeded={() => setIsIntakeAssessmentOpen(true)}
+      />
+
+      <IntakeAssessmentDialog
+        open={isIntakeAssessmentOpen}
+        onOpenChange={setIsIntakeAssessmentOpen}
+        caseId={Number(caseId)}
+        caseCode={caseRecord.caseCode}
+        patientName={caseRecord.patient?.fullName}
+        patientAddress={
+          caseRecord.patient?.address ||
+          [caseRecord.patient?.barangay, caseRecord.patient?.city].filter(Boolean).join(", ")
+        }
+        patientContact={caseRecord.patient?.contactNo}
+        existingAssessment={assessments[0] ?? null}
+      />
+
+      <ReassessCaseDialog
+        open={isReassessOpen}
+        onOpenChange={setIsReassessOpen}
+        caseId={Number(caseId)}
+        latestAssessment={assessments[0] ?? null}
       />
     </div>
   )

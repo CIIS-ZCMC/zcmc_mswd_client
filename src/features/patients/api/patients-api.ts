@@ -130,6 +130,7 @@ export interface CreateFamilyMemberPayload {
   birthdate?: string
   sex?: string
   age?: number
+  civil_status?: string
   occupation?: string
   monthly_income?: number
   educational_attainment?: string
@@ -150,6 +151,7 @@ export interface UpdateFamilyMemberPayload {
   birthdate?: string
   sex?: string
   age?: number
+  civil_status?: string
   occupation?: string
   monthly_income?: number
   educational_attainment?: string

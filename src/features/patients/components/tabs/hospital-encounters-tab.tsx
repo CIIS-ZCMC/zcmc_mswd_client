@@ -21,9 +21,8 @@ import { OpenCaseDialog } from "@/features/cases/components/dialogs/open-case-di
 import { EncounterUisPanel } from "@/features/cases/components/encounter-uis-panel"
 import { useAssignableCases } from "@/features/hospital/hooks/use-hospital-encounters"
 import { formatTransactionType } from "@/features/hospital/lib/transaction-type"
-import { usePrintEncounterUis } from "@/features/cases/hooks/use-uis-prints"
 import type { HospitalEncounter } from "@/features/hospital/types"
-import { AlertCircle, Building2, Calendar, ClipboardCheck, ExternalLink, FolderPlus, Loader2, Printer } from "lucide-react"
+import { AlertCircle, Building2, Calendar, ClipboardCheck, ExternalLink, FolderPlus, Loader2 } from "lucide-react"
 import { useNavigate } from "react-router"
 import type { PatientRecord } from "../../types"
 
@@ -33,19 +32,7 @@ interface HospitalEncountersTabProps {
 
 const EncounterHeader: React.FC<{
   encounter: HospitalEncounter
-  canViewIntake: boolean
-}> = ({ encounter, canViewIntake }) => {
-  const printMutation = usePrintEncounterUis(encounter.id)
-
-  const handlePrint = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    try {
-      await printMutation.mutateAsync(undefined)
-    } catch (err) {
-      console.error("Failed to print UIS for encounter", err)
-    }
-  }
-
+}> = ({ encounter }) => {
   return (
     <div className="flex flex-1 flex-wrap items-center justify-between gap-3 pr-3">
       <div className="flex items-center gap-2.5 flex-wrap">
@@ -62,25 +49,6 @@ const EncounterHeader: React.FC<{
           <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
           {encounter.registrationDate ?? "—"}
         </span>
-
-        {canViewIntake && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={printMutation.isPending}
-            onClick={handlePrint}
-            className="h-8 px-2.5 text-xs font-bold gap-1.5 border shadow-2xs text-primary hover:bg-primary/10 hover:text-primary shrink-0"
-            title="Download Unified Intake Sheet (ANNEX B) PDF for this encounter"
-          >
-            {printMutation.isPending ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
-            ) : (
-              <Printer className="w-3.5 h-3.5 text-primary" />
-            )}
-            Print UIS
-          </Button>
-        )}
       </div>
     </div>
   )
@@ -94,7 +62,6 @@ const EncounterBody: React.FC<{
   canCreateCase: boolean
 }> = ({ encounter, expanded, patient, canAssess, canCreateCase }) => {
   const navigate = useNavigate()
-  const canViewIntake = usePermission("intake.view")
   const [assessOpen, setAssessOpen] = useState(false)
   const [openCaseOpen, setOpenCaseOpen] = useState(false)
   const [createdCase, setCreatedCase] = useState<{ id: number; caseCode: string } | null>(null)
@@ -107,16 +74,6 @@ const EncounterBody: React.FC<{
     (assignableCases.length > 0
       ? { id: assignableCases[0].id, caseCode: assignableCases[0].caseCode }
       : null)
-
-  const printUisMutation = usePrintEncounterUis(encounter.id)
-
-  const handleDirectPrintUis = async () => {
-    try {
-      await printUisMutation.mutateAsync(undefined)
-    } catch (err) {
-      console.error("Failed to print UIS", err)
-    }
-  }
 
   return (
     <div className="space-y-4 pt-2">
@@ -140,6 +97,7 @@ const EncounterBody: React.FC<{
       <EncounterUisPanel
         caseId={activeCase?.id}
         caseCode={activeCase?.caseCode}
+        patientName={patient.fullName}
         transactionId={encounter.id}
         transactionType={encounter.patientTransactionType}
         onOpenCaseNeeded={() => setOpenCaseOpen(true)}
@@ -155,24 +113,6 @@ const EncounterBody: React.FC<{
           >
             <ExternalLink className="w-4 h-4 text-primary" />
             View Active Case
-          </Button>
-        )}
-
-        {canViewIntake && (
-          <Button
-            type="button"
-            variant="outline"
-            disabled={printUisMutation.isPending}
-            onClick={handleDirectPrintUis}
-            className="font-bold text-sm h-10 px-4 gap-2 border shadow-2xs text-primary hover:bg-primary/5"
-            title="Download Unified Intake Sheet (ANNEX B) PDF for this encounter"
-          >
-            {printUisMutation.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin text-primary" />
-            ) : (
-              <Printer className="w-4 h-4 text-primary" />
-            )}
-            Print UIS
           </Button>
         )}
 
@@ -232,7 +172,6 @@ export const HospitalEncountersTab: React.FC<HospitalEncountersTabProps> = ({ pa
   const hospitalNumber = patient.hospitalId
   const canAssess = usePermission("cases.update")
   const canCreateCase = usePermission("cases.create")
-  const canViewIntake = usePermission("intake.view")
   const [open, setOpen] = useState<string[]>([])
 
   const { data: encounters = [], isLoading, error } = useHospitalEncounters(hospitalNumber)
@@ -306,7 +245,7 @@ export const HospitalEncountersTab: React.FC<HospitalEncountersTabProps> = ({ pa
             {encounters.map((enc) => (
               <AccordionItem key={enc.id} value={String(enc.id)} className="border rounded-lg px-4 shadow-2xs transition-colors">
                 <AccordionTrigger className="hover:no-underline py-3.5">
-                  <EncounterHeader encounter={enc} canViewIntake={canViewIntake} />
+                  <EncounterHeader encounter={enc} />
                 </AccordionTrigger>
                 <AccordionContent className="pb-4">
                   <EncounterBody

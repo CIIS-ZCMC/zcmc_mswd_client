@@ -57,7 +57,12 @@ export interface Assessment {
   problemCategories: string[]
   problemSpecify: string | null
   informantName: string | null
+  informantFirstName?: string | null
+  informantMiddleName?: string | null
+  informantLastName?: string | null
   informantRelationship: string | null
+  informantAddress?: string | null
+  informantContact?: string | null
   otherIncomeSources: OtherIncomeSource[]
   referralSource: string | null
   medicalHistory: string | null
@@ -72,6 +77,81 @@ export interface Assessment {
   parentAssessment?: Assessment | null
   createdAt: string
   updatedAt: string
+}
+
+export interface CreateAssessmentPayload {
+  informant_name?: string | null
+  informant_first_name?: string | null
+  informant_middle_name?: string | null
+  informant_last_name?: string | null
+  informant_relationship?: string | null
+  informant_address?: string | null
+  informant_contact_number?: string | null
+  informant_contact?: string | null
+  other_income_sources?: Array<{ source: string; amount: number | string | null }>
+  referral_source?: string | null
+  medical_history?: string | null
+  recommendation?: string | null
+  recommendation_mode?: string | null
+  fund_source?: string | null
+  house_tenure?: string | null
+  light_source?: string[] | null
+  water_source?: string[] | null
+  presenting_problem?: string | null
+  problem_categories?: string[] | null
+  problem_specify?: string | null
+  total_family_income?: number | string | null
+  housing_type?: string | null
+  utilities_access?: string | null
+  family_background?: string | null
+  social_functioning?: string | null
+  assessment_notes?: string | null
+  intervention_plan?: string | null
+  classification?: string | null
+  classification_override_reason?: string | null
+  expenses?: Array<{ expense_type: string; amount: number }>
+}
+
+export interface UpdateAssessmentPayload {
+  informant_name?: string | null
+  informant_first_name?: string | null
+  informant_middle_name?: string | null
+  informant_last_name?: string | null
+  informant_relationship?: string | null
+  informant_address?: string | null
+  informant_contact_number?: string | null
+  informant_contact?: string | null
+  other_income_sources?: Array<{ source: string; amount: number | string | null }>
+  referral_source?: string | null
+  medical_history?: string | null
+  recommendation?: string | null
+  recommendation_mode?: string | null
+  fund_source?: string | null
+  house_tenure?: string | null
+  light_source?: string[] | null
+  water_source?: string[] | null
+  presenting_problem?: string | null
+  problem_categories?: string[] | null
+  problem_specify?: string | null
+  total_family_income?: number | string | null
+  housing_type?: string | null
+  utilities_access?: string | null
+  family_background?: string | null
+  social_functioning?: string | null
+  assessment_notes?: string | null
+  intervention_plan?: string | null
+  classification?: string | null
+  classification_override_reason?: string | null
+}
+
+export interface CreateAssessmentExpensePayload {
+  expense_type: string
+  amount: number
+}
+
+export interface UpdateAssessmentExpensePayload {
+  expense_type?: string
+  amount?: number
 }
 
 export interface ReassessmentPayload {
@@ -89,3 +169,4 @@ export interface ReassessmentPayload {
 export interface PromoteAssessmentPayload {
   assessment_id: number
 }
+

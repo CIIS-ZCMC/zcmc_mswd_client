@@ -16,6 +16,7 @@ export interface FamilyMember {
   birthdate: string
   sex: string
   age: number
+  civilStatus?: string
   occupation: string
   monthlyIncome: number
   educationalAttainment: string

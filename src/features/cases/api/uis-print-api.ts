@@ -1,22 +1,63 @@
 import { apiClient, fetchBlob } from "@/lib/api-client"
 import type { ApiEnvelope } from "@/features/patients/types/api.types"
-import type { ApiUisPrintLog } from "../types/api.types"
+import type { ApiUisPrintLog, ApiUisReadiness } from "../types/api.types"
+
+export interface CaseUisPdfOptions {
+  copies?: number
+  remarks?: string
+  preview?: boolean
+  blank?: boolean
+  filename?: string
+}
 
 /**
- * GET /cases/{id}/uis/pdf — streams the rendered Unified Intake Sheet (ANNEX B)
- * from current case data and logs the print server-side.
+ * GET /cases/{id}/uis — readiness information for printing the Unified Intake Sheet.
  */
-export function downloadCaseUisPdf(caseId: number | string, filename?: string): Promise<void> {
-  return fetchBlob(`/cases/${caseId}/uis/pdf`, { download: 1 }).then((blob) => {
-    const url = URL.createObjectURL(blob)
+export function getCaseUisReadiness(caseId: number | string): Promise<ApiUisReadiness> {
+  return apiClient
+    .get<ApiEnvelope<ApiUisReadiness>>(`/cases/${caseId}/uis`)
+    .then((res) => res.data)
+}
+
+/**
+ * GET /cases/{id}/uis/pdf — streams the rendered Unified Intake Sheet (ANNEX B).
+ * When `preview: true`, opens the PDF in a new tab without logging a print server-side.
+ * Otherwise triggers a download and logs the print count and remarks.
+ */
+export async function downloadCaseUisPdf(
+  caseId: number | string,
+  options?: CaseUisPdfOptions | string
+): Promise<void> {
+  const opts: CaseUisPdfOptions =
+    typeof options === "string" ? { filename: options } : (options ?? {})
+
+  const params: Record<string, string | number | boolean | undefined> = {
+    copies: opts.copies && opts.copies > 1 ? opts.copies : undefined,
+    remarks: opts.remarks?.trim() || undefined,
+    blank: opts.blank ? 1 : undefined,
+  }
+
+  if (opts.preview) {
+    params.preview = 1
+  } else {
+    params.download = 1
+  }
+
+  const blob = await fetchBlob(`/cases/${caseId}/uis/pdf`, params)
+  const url = URL.createObjectURL(blob)
+
+  if (opts.preview) {
+    window.open(url, "_blank")
+    setTimeout(() => URL.revokeObjectURL(url), 60000)
+  } else {
     const link = document.createElement("a")
     link.href = url
-    link.download = filename || `UIS-CASE-${caseId}.pdf`
+    link.download = opts.filename || `UIS-CASE-${caseId}.pdf`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-  })
+  }
 }
 
 /**
@@ -26,44 +67,4 @@ export function listCaseUisPrints(caseId: number | string): Promise<ApiUisPrintL
   return apiClient
     .get<ApiEnvelope<ApiUisPrintLog[]>>(`/cases/${caseId}/uis/prints`)
     .then((res) => res.data)
-    .catch((err) => {
-      console.error(`Failed to load UIS print history for case ${caseId}:`, err)
-      return []
-    })
 }
-
-/**
- * GET /patient-transactions/{id}/uis/pdf — streams the rendered Unified Intake Sheet (ANNEX B)
- * directly from an encounter (HIS transaction).
- */
-export function downloadEncounterUisPdf(
-  encounterId: number | string,
-  filename?: string
-): Promise<void> {
-  return fetchBlob(`/patient-transactions/${encounterId}/uis/pdf`, { download: 1 }).then((blob) => {
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = filename || `UIS-ENCOUNTER-${encounterId}.pdf`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-  })
-}
-
-/**
- * GET /patient-transactions/{id}/uis/prints — history of past UIS prints for an encounter.
- */
-export function listEncounterUisPrints(
-  encounterId: number | string
-): Promise<ApiUisPrintLog[]> {
-  return apiClient
-    .get<ApiEnvelope<ApiUisPrintLog[]>>(`/patient-transactions/${encounterId}/uis/prints`)
-    .then((res) => res.data)
-    .catch((err) => {
-      console.error(`Failed to load UIS print history for encounter ${encounterId}:`, err)
-      return []
-    })
-}
-

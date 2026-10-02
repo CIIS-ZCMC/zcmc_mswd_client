@@ -12,6 +12,7 @@ import { useMswdClassificationMatrix, useReassessCase } from "../../hooks/use-as
 import type { Assessment, MswdClassificationCode, ReassessmentPayload } from "../../types/assessment.types"
 import { formatCurrency, getBracketColor, getBracketLabel } from "../../lib/classification"
 import { AlertCircle, AlertTriangle, Calculator, Loader2, Plus, Trash2 } from "lucide-react"
+import { ApiError } from "@/lib/api-client"
 
 interface ReassessCaseDialogProps {
   open: boolean
@@ -60,7 +61,7 @@ export const ReassessCaseDialog: React.FC<ReassessCaseDialogProps> = ({
       amount: String(e.amount),
     })) || [
       { expense_type: "Food & Household", amount: "0" },
-      { expense_type: "Utilities & Rent", amount: "0 font-mono" },
+      { expense_type: "Utilities & Rent", amount: "0" },
     ]
   )
 
@@ -150,8 +151,12 @@ export const ReassessCaseDialog: React.FC<ReassessCaseDialogProps> = ({
       await reassessMutation.mutateAsync(payload)
       onOpenChange(false)
       if (onSuccess) onSuccess()
-    } catch (err: any) {
-      setErrorMsg(err?.response?.data?.message || err?.message || "Failed to submit re-assessment.")
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        setErrorMsg(err.firstValidationMessage || err.message)
+      } else {
+        setErrorMsg(err instanceof Error ? err.message : "Failed to submit re-assessment.")
+      }
     }
   }
 
