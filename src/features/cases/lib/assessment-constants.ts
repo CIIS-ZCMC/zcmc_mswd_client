@@ -14,22 +14,11 @@ export const INFORMANT_RELATIONSHIP_OPTIONS = [
   { value: "Other", label: "Other" },
 ] as const
 
-export const HOUSE_TENURE_OPTIONS = [
-  { value: "owned", label: "Owned" },
-  { value: "rented", label: "Rented" },
-] as const
-
-export const LIGHT_SOURCE_OPTIONS = [
-  { value: "electricity", label: "Electricity" },
-  { value: "kerosene", label: "Kerosene" },
-  { value: "candle", label: "Candle" },
-] as const
-
-export const WATER_SOURCE_OPTIONS = [
-  { value: "owned", label: "Owned" },
-  { value: "public", label: "Public" },
-  { value: "artesian_well", label: "Artesian Well" },
-] as const
+export {
+  HOUSE_TENURE_OPTIONS,
+  LIGHT_SOURCE_OPTIONS,
+  WATER_SOURCE_OPTIONS,
+} from "@/lib/socioeconomic-constants"
 
 export const EXPENSE_CATEGORY_OPTIONS = [
   { value: "Food", label: "Food" },

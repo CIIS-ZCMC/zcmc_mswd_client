@@ -24,13 +24,13 @@ Front-end for the ZCMC (Zamboanga City Medical Center) Medical Social Work Depar
 
 ### Shell
 
-`main.tsx` (QueryClientProvider + ThemeProvider) → `App.tsx` (auth gate: spinner / `LoginForm` / `MainLayout`) → `components/layout/main-layout.tsx` (Header + Sidebar master list + `PatientDetailView`). The detail view is a 10-tab pane: `profile`, `id`, `family`, `watchers`, `caretake`, `social-case`, `hospital-encounters`, `uis`, `documents`, `history`. The Unified Intake Sheet (ANNEX B) is **not** a stored record — it is a case-only printable the server renders (`GET /cases/{id}/uis/pdf`, with readiness hints from `GET /cases/{id}/uis`), printed from the case detail page and the Hospital Encounters tab, with a print history and blank template option. There is no encounter-level UIS print endpoint. The patient-page `uis` tab (`patients/components/tabs/uis-tab.tsx`) lists a patient's UIS per case (`GET /patients/{id}/uis`) and gives CRUD over each case's intake assessment (assess / view / edit / delete), reusing the intake and print dialogs.
+`main.tsx` (QueryClientProvider + ThemeProvider) → `App.tsx` (auth gate: spinner / `LoginForm` / `MainLayout`) → `components/layout/main-layout.tsx` (Header + Sidebar master list + `PatientDetailView`). The detail view is an 11-tab pane: `profile`, `id`, `family`, `socioeconomic`, `watchers`, `caretake`, `social-case`, `hospital-encounters`, `uis`, `documents`, `history`. The List of Expenses tab (`src/features/socioeconomic/`, tab key `socioeconomic`) is an independent, patient-level module with zero coupling to cases that manages itemized expenses and family income. The Unified Intake Sheet (ANNEX B) is **not** a stored record — it is a case-only printable the server renders (`GET /cases/{id}/uis/pdf`, with readiness hints from `GET /cases/{id}/uis`), printed from the case detail page and the Hospital Encounters tab, with a print history and blank template option. There is no encounter-level UIS print endpoint. The patient-page `uis` tab (`patients/components/tabs/uis-tab.tsx`) lists a patient's UIS per case (`GET /patients/{id}/uis`) and gives CRUD over each case's intake assessment (assess / view / edit / delete), reusing the intake and print dialogs.
 
 `App.tsx` holds no data — it wires `usePatients()` (list, pagination, filters) and `usePatientDetail()` (one patient) into `MainLayout` as props. The prop list is long and hand-threaded; follow that pattern rather than introducing a context unless asked.
 
 ### Feature folders
 
-`src/features/<feature>/{api,components,hooks,types}`. Live features: `auth`, `patients` (the bulk of the app), `audit` (cross-patient activity log, API-only so far). `intake` and `reference` are empty scaffolding.
+`src/features/<feature>/{api,components,hooks,types}`. Live features: `auth`, `patients`, `socioeconomic`, `cases`, `hospital`, `audit` (cross-patient activity log). `intake` and `reference` are auxiliary.
 
 ### The four data layers
 

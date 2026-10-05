@@ -57,7 +57,4 @@ export const getBracketLabel = (code: MswdClassificationCode | string | null) =>
   }
 }
 
-export const formatCurrency = (val: number | null | undefined) => {
-  if (val === null || val === undefined) return "₱0.00"
-  return `₱${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
+export { formatCurrency } from "@/lib/format-currency"
