@@ -1,6 +1,6 @@
 import React from "react"
 import { format, parseISO } from "date-fns"
-import { Calendar, Pencil, Trash2, User } from "lucide-react"
+import { Calendar, Pencil, Trash2, UserCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { SocioeconomicCurrent } from "../types/socioeconomic.types"
 
@@ -30,43 +30,50 @@ export const SocioeconomicHeader: React.FC<SocioeconomicHeaderProps> = ({
     : "Unspecified date"
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border bg-card text-card-foreground shadow-xs">
-      <div className="space-y-1">
-        <h2 className="text-base font-semibold tracking-tight">List of Expenses</h2>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl border bg-card text-card-foreground shadow-sm">
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+            List of Expenses & Living Assessment
+          </h2>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs sm:text-sm text-muted-foreground">
           <div className="flex items-center gap-1.5">
-            <Calendar className="size-3.5 text-muted-foreground/70" />
-            <span>Recorded on <span className="font-medium text-foreground">{formattedDate}</span></span>
+            <Calendar className="size-4 text-primary shrink-0" />
+            <span>
+              Recorded on: <strong className="font-semibold text-foreground">{formattedDate}</strong>
+            </span>
           </div>
           {current.recordedBy?.name && (
             <div className="flex items-center gap-1.5">
-              <User className="size-3.5 text-muted-foreground/70" />
-              <span>Assessed by <span className="font-medium text-foreground">{current.recordedBy.name}</span></span>
+              <UserCheck className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>
+                Assessed by: <strong className="font-semibold text-foreground">{current.recordedBy.name}</strong>
+              </span>
             </div>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2.5 shrink-0">
         {canUpdate && (
           <Button
-            variant="outline"
-            size="sm"
+            size="default"
             onClick={onEdit}
-            className="h-8 gap-1.5 text-xs font-semibold cursor-pointer"
+            className="h-9 sm:h-10 px-4 gap-2 text-xs sm:text-sm font-semibold cursor-pointer shadow-sm"
           >
-            <Pencil className="size-3.5" />
+            <Pencil className="size-4" />
             <span>Update Record</span>
           </Button>
         )}
         {canDelete && (
           <Button
             variant="outline"
-            size="sm"
+            size="default"
             onClick={onDelete}
-            className="h-8 gap-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30 cursor-pointer"
+            className="h-9 sm:h-10 px-3.5 gap-2 text-xs sm:text-sm font-semibold text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30 cursor-pointer"
           >
-            <Trash2 className="size-3.5" />
+            <Trash2 className="size-4" />
             <span>Delete</span>
           </Button>
         )}
