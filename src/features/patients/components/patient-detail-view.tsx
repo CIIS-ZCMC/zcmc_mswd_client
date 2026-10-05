@@ -15,6 +15,7 @@ import {
   FolderPlus,
   History,
   Printer,
+  Receipt,
   User,
   UserCheck,
   Users,
@@ -36,6 +37,7 @@ import { IdTab } from "./tabs/id-tab"
 import { ProfileTab } from "./tabs/profile-tab"
 import { SocialCaseTab } from "./tabs/social-case-tab"
 import { CaretakeTab } from "./tabs/caretake-tab"
+import { SocioeconomicTab } from "@/features/socioeconomic"
 import { UisTab } from "./tabs/uis-tab"
 import { WatchersTab } from "./tabs/watchers-tab"
 
@@ -52,6 +54,7 @@ const PATIENT_TABS = [
   "profile",
   "id",
   "family",
+  "socioeconomic",
   "watchers",
   "caretake",
   "social-case",
@@ -257,6 +260,14 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
             </TabsTrigger>
 
             <TabsTrigger
+              value="socioeconomic"
+              className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
+            >
+              <Receipt className="size-5" />
+              <span>List of Expenses</span>
+            </TabsTrigger>
+
+            <TabsTrigger
               value="watchers"
               className="rounded-xl px-5 py-3.5 h-auto flex-none shrink-0 text-base font-bold gap-3 border border-transparent data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02] transition-all cursor-pointer"
             >
@@ -337,6 +348,10 @@ export const PatientDetailView: React.FC<PatientDetailViewProps> = ({ patient })
               onOpenEditFamilyDialog={(member) => setEditingFamilyMember(member)}
               onDeleteFamilyMember={handleDeleteFamilyMember}
             />
+          </TabsContent>
+
+          <TabsContent value="socioeconomic">
+            <SocioeconomicTab patient={patient} />
           </TabsContent>
 
           <TabsContent value="watchers">

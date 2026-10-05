@@ -11,6 +11,7 @@ import {
   type UpdatePatientBackgroundPayload,
 } from "../api/patients-api"
 import { patientDetailKeys } from "./use-patient-detail"
+import { socioeconomicKeys } from "@/features/socioeconomic"
 
 /**
  * Real server-backed writes for the patient detail view — these hit the API
@@ -25,6 +26,7 @@ export function useAddFamilyMember(patientId: string) {
     mutationFn: (payload: CreateFamilyMemberPayload) => createFamilyMember(numericId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: patientDetailKeys(numericId).profile })
+      queryClient.invalidateQueries({ queryKey: socioeconomicKeys.all })
     },
   })
 }
@@ -38,6 +40,7 @@ export function useUpdateFamilyMember(patientId: string) {
       updateFamilyMember(memberId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: patientDetailKeys(numericId).profile })
+      queryClient.invalidateQueries({ queryKey: socioeconomicKeys.all })
     },
   })
 }
@@ -50,6 +53,7 @@ export function useDeleteFamilyMember(patientId: string) {
     mutationFn: (memberId: string | number) => deleteFamilyMember(memberId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: patientDetailKeys(numericId).profile })
+      queryClient.invalidateQueries({ queryKey: socioeconomicKeys.all })
     },
   })
 }
@@ -63,6 +67,7 @@ export function useUpdatePatientBackground(patientId: string) {
     mutationFn: (payload: UpdatePatientBackgroundPayload) => updatePatientBackground(numericId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: patientDetailKeys(numericId).profile })
+      queryClient.invalidateQueries({ queryKey: socioeconomicKeys.all })
     },
   })
 }
